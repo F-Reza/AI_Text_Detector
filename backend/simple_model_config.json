@@ -1,0 +1,20 @@
+{
+  "weights": {
+    "lexical_diversity": -0.3,
+    "ai_pattern_count": 0.2,
+    "human_pattern_count": -0.2,
+    "avg_sentence_length": 0.15,
+    "sentence_variation": -0.25,
+    "avg_word_length": 0.1
+  },
+  "features_used": [
+    "lexical_diversity",
+    "ai_pattern_count",
+    "human_pattern_count",
+    "avg_sentence_length",
+    "sentence_variation",
+    "avg_word_length"
+  ],
+  "accuracy": 0.5,
+  "training_samples": 30
+}

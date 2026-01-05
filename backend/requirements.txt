@@ -1,4 +1,14 @@
 Flask==3.0.0
 Flask-CORS==4.0.0
+nltk==3.8.1
+textstat==0.7.3
+langdetect==1.0.9
+numpy==1.24.3
+pandas==2.0.3
 pypdf==4.2.0
 pdfplumber==0.11.0
+docx2txt==0.8
+scikit-learn==1.4.0
+transformers==4.36.0
+torch==2.1.0
+scipy==1.11.4
