@@ -32,7 +32,7 @@
             <section class="hero">
                 <div class="hero-text">
                     <h2>Advanced AI Content Detection</h2>
-                    <p>Detect AI-generated text with 95%+ accuracy. Analyze essays, articles, emails, and more.</p>
+                    <p>Detect AI-generated text with 95%+ accuracy. Analyze essays, articles, emails, and more with interactive text highlighting.</p>
                     <div class="stats">
                         <div class="stat">
                             <i class="fas fa-bolt"></i>
@@ -43,8 +43,8 @@
                             <span>95% Accuracy</span>
                         </div>
                         <div class="stat">
-                            <i class="fas fa-infinity"></i>
-                            <span>Unlimited Checks</span>
+                            <i class="fas fa-highlighter"></i>
+                            <span>Text Highlighting</span>
                         </div>
                     </div>
                 </div>
@@ -91,7 +91,7 @@
                         <label for="fileInput" class="file-label">
                             <i class="fas fa-upload"></i> Upload Document
                         </label>
-                        <span class="file-info">Supports TXT, DOC, PDF</span>
+                        <span class="file-info">Supports TXT, PDF, DOC, DOCX</span>
                     </div>
                 </div>
 
@@ -187,6 +187,57 @@
                                 <li>No analysis performed yet</li>
                             </ul>
                         </div>
+
+                        <!-- Text Highlighter Section -->
+                        <div class="highlighter-section">
+                            <h4><i class="fas fa-highlighter"></i> Text Analysis Highlighter</h4>
+                            <div class="highlighter-controls">
+                                <div class="highlight-legend">
+                                    <div class="legend-item">
+                                        <span class="legend-color ai-highlight"></span>
+                                        <span>AI-generated</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-color mixed-highlight"></span>
+                                        <span>Human-written & AI-refined</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <span class="legend-color human-highlight"></span>
+                                        <span>Human-written</span>
+                                    </div>
+                                </div>
+                                <div class="highlight-actions">
+                                    <button class="btn-action" onclick="copyHighlightedText()">
+                                        <i class="fas fa-copy"></i> Copy Text
+                                    </button>
+                                    <button class="btn-action" onclick="clearHighlights()">
+                                        <i class="fas fa-eraser"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="highlighted-text-container">
+                                <div class="highlighted-text" id="highlightedText">
+                                    <p class="placeholder">Analyze text to see highlighted results...</p>
+                                </div>
+                            </div>
+                            <div class="highlight-stats">
+                                <div class="stat-item">
+                                    <i class="fas fa-robot"></i>
+                                    <span id="aiPercentage">0%</span>
+                                    <span>AI Content</span>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="fas fa-blend"></i>
+                                    <span id="mixedPercentage">0%</span>
+                                    <span>Mixed Content</span>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="fas fa-user"></i>
+                                    <span id="humanPercentage">0%</span>
+                                    <span>Human Content</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -211,17 +262,17 @@
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="fas fa-project-diagram"></i>
+                            <i class="fas fa-highlighter"></i>
                         </div>
-                        <h4>Pattern Recognition</h4>
-                        <p>Detects repetition and predictable structures common in AI text.</p>
+                        <h4>Interactive Highlighting</h4>
+                        <p>Color-coded text highlighting shows AI vs human content in real-time.</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="fas fa-history"></i>
+                            <i class="fas fa-file-upload"></i>
                         </div>
-                        <h4>Historical Comparison</h4>
-                        <p>Compares with previous analyses to improve accuracy over time.</p>
+                        <h4>Multi-Format Support</h4>
+                        <p>Upload and analyze TXT, PDF, DOC, and DOCX files with ease.</p>
                     </div>
                 </div>
             </section>

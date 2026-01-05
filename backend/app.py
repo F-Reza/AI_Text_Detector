@@ -2,10 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import re
 import math
-import json
 import os
 from datetime import datetime
-import base64
 from werkzeug.utils import secure_filename
 
 # Try to import PDF libraries
@@ -50,7 +48,8 @@ class AIDetector:
             "in conclusion", "overall", "the study found", "research shows",
             "it should be noted", "additionally", "furthermore", "moreover",
             "however", "therefore", "consequently", "thus", "hence",
-            "on the other hand", "in contrast", "similarly", "likewise"
+            "on the other hand", "in contrast", "similarly", "likewise",
+            "this paper discusses", "the findings indicate", "it can be concluded"
         ]
         
         # Common human writing patterns
@@ -58,7 +57,8 @@ class AIDetector:
             "i think", "i believe", "in my opinion", "personally",
             "actually", "basically", "kind of", "sort of", "you know",
             "i mean", "well", "anyway", "honestly", "frankly",
-            "to be honest", "if you ask me", "the thing is", "you see"
+            "to be honest", "if you ask me", "the thing is", "you see",
+            "guess what", "by the way", "as a matter of fact"
         ]
     
     def extract_text_from_pdf(self, file_path):
@@ -94,23 +94,6 @@ class AIDetector:
             except Exception as e:
                 print(f"PyPDF2 failed: {e}")
         
-        # Method 3: Try simple text extraction
-        if not text.strip():
-            try:
-                # Try to read as binary and decode
-                with open(file_path, 'rb') as file:
-                    raw_data = file.read()
-                    # Try common encodings
-                    for encoding in ['utf-8', 'latin-1', 'cp1252']:
-                        try:
-                            text = raw_data.decode(encoding)
-                            if len(text) > 100:  # Reasonable amount of text
-                                break
-                        except:
-                            continue
-            except:
-                pass
-        
         return text.strip() if text.strip() else ""
     
     def extract_text_from_file(self, file_path, filename):
@@ -123,11 +106,11 @@ class AIDetector:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 return f.read()
         elif ext in ['.doc', '.docx']:
-            # For DOC/DOCX, try to extract text from binary
+            # Simple text extraction for DOC/DOCX
             try:
                 with open(file_path, 'rb') as f:
                     content = f.read()
-                    # Try UTF-8 decode first
+                    # Try UTF-8 decode
                     try:
                         return content.decode('utf-8', errors='ignore')
                     except:
@@ -143,21 +126,21 @@ class AIDetector:
         else:
             raise ValueError(f"Unsupported file type: {ext}")
     
-    def analyze_text(self, text):
-        """Analyze text for AI probability"""
+    def analyze_text_with_segments(self, text):
+        """Analyze text and return segment-level analysis for highlighting"""
         text = text.strip()
         
-        if len(text) < 50:  # Minimum characters
+        if len(text) < 50:
             return self._error_result("Text too short (minimum 50 characters)")
         
-        # Extract features
+        # Extract features for overall text
         features = self._extract_features(text)
         
-        # Calculate scores
+        # Calculate overall scores
         ai_score = self._calculate_ai_score(features, text.lower())
         human_score = self._calculate_human_score(features, text.lower())
         
-        # Calculate probabilities
+        # Calculate overall probabilities
         total = ai_score + human_score
         if total == 0:
             ai_prob = 50
@@ -166,12 +149,63 @@ class AIDetector:
             ai_prob = (ai_score / total) * 100
             human_prob = (human_score / total) * 100
         
-        # Determine result
+        # Determine overall verdict
         is_ai = ai_prob > human_prob
         confidence = min(100, abs(ai_prob - human_prob) * 1.2)
         
-        # Generate analysis
+        # Generate overall analysis
         analysis = self._generate_analysis(features, text.lower())
+        
+        # Split text into sentences for segment analysis
+        sentences = []
+        current = ""
+        for char in text:
+            current += char
+            if char in '.!?':
+                sentences.append(current.strip())
+                current = ""
+        if current.strip():
+            sentences.append(current.strip())
+        
+        sentences = [s for s in sentences if s and len(s) > 5]
+        
+        # Analyze each sentence
+        sentence_analysis = []
+        for sentence in sentences:
+            if len(sentence.split()) < 3:
+                continue
+                
+            # Calculate sentence features
+            sent_features = self._extract_features(sentence)
+            text_lower = sentence.lower()
+            
+            # Score the sentence
+            sent_ai_score = self._calculate_ai_score(sent_features, text_lower)
+            sent_human_score = self._calculate_human_score(sent_features, text_lower)
+            
+            sent_total = sent_ai_score + sent_human_score
+            if sent_total > 0:
+                sent_ai_prob = (sent_ai_score / sent_total) * 100
+            else:
+                sent_ai_prob = ai_prob
+            
+            # Determine sentence type
+            if sent_ai_prob > 70:
+                segment_type = "ai"
+                description = "AI-generated"
+            elif sent_ai_prob > 40:
+                segment_type = "mixed"
+                description = "Human-written & AI-refined"
+            else:
+                segment_type = "human"
+                description = "Human-written"
+            
+            sentence_analysis.append({
+                'text': sentence,
+                'ai_probability': round(sent_ai_prob, 1),
+                'type': segment_type,
+                'description': description
+            })
         
         return {
             "success": True,
@@ -181,7 +215,7 @@ class AIDetector:
             "confidence": round(confidence, 1),
             "text_metrics": {
                 "words": features['word_count'],
-                "sentences": features['sentence_count'],
+                "sentences": len(sentences),
                 "characters": len(text),
                 "paragraphs": len([p for p in text.split('\n\n') if p.strip()]),
                 "reading_time": round(features['word_count'] / 200, 1),
@@ -192,7 +226,9 @@ class AIDetector:
                 "lexical_diversity": round(features['lexical_diversity'], 3),
                 "avg_sentence_length": round(features['avg_sentence_length'], 1),
                 "sentence_variation": round(features['sentence_variation'], 3)
-            }
+            },
+            "sentence_analysis": sentence_analysis,
+            "extracted_text": text  # Return the analyzed text for frontend
         }
     
     def _error_result(self, message):
@@ -283,9 +319,8 @@ class AIDetector:
                 score += 0.2
                 break
         
-        # Check for perfect grammar patterns
+        # Check for formal structure
         if features['sentence_count'] > 0:
-            # Count sentences that start with capital letter and end with punctuation
             proper_sentences = sum(1 for s in text_lower.split('. ') if s and s[0].isupper())
             if proper_sentences / features['sentence_count'] > 0.8:
                 score += 0.1
@@ -344,8 +379,6 @@ class AIDetector:
             analysis.append(f"Low lexical diversity ({diversity:.2f}) - common in AI-generated text")
         elif diversity > 0.75:
             analysis.append(f"High lexical diversity ({diversity:.2f}) - suggests human authorship")
-        else:
-            analysis.append(f"Moderate lexical diversity ({diversity:.2f})")
         
         # Sentence variation analysis
         variation = features['sentence_variation']
@@ -363,13 +396,6 @@ class AIDetector:
         if human_phrase_found:
             analysis.append("Contains conversational markers typical of human writing")
         
-        # Word count analysis
-        word_count = features['word_count']
-        if word_count < 100:
-            analysis.append("Short text - analysis confidence may be lower")
-        elif word_count > 500:
-            analysis.append("Long text analyzed - higher confidence in results")
-        
         return analysis
 
 # Initialize detector
@@ -383,7 +409,7 @@ def allowed_file(filename):
 def home():
     return jsonify({
         "name": "AI Detector API with PDF Support",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "status": "running",
         "pdf_support": PDF_SUPPORT or PDFPLUMBER_SUPPORT,
         "supported_files": list(ALLOWED_EXTENSIONS),
@@ -424,8 +450,8 @@ def upload_file():
                     "error": "Could not extract sufficient text from file (minimum 50 characters required)"
                 }), 400
             
-            # Analyze the text
-            result = detector.analyze_text(text)
+            # Analyze the text with segments
+            result = detector.analyze_text_with_segments(text)
             
             if result['success']:
                 # Add file info to result
@@ -502,7 +528,8 @@ def detect_text():
                 "error": "Text too short (minimum 50 characters)"
             }), 400
         
-        result = detector.analyze_text(text)
+        # Analyze with segments for highlighting
+        result = detector.analyze_text_with_segments(text)
         
         if result['success']:
             history_entry = {
@@ -552,12 +579,12 @@ def health_check():
         "timestamp": datetime.now().isoformat(),
         "pdf_support": PDF_SUPPORT or PDFPLUMBER_SUPPORT,
         "uploads_folder_exists": os.path.exists(UPLOAD_FOLDER),
-        "version": "1.2.0"
+        "version": "1.3.0"
     })
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("AI Detector with PDF Support")
+    print("AI Detector with PDF Support & Text Highlighter")
     print("=" * 60)
     print(f"PDF Support: {'ENABLED' if PDF_SUPPORT or PDFPLUMBER_SUPPORT else 'DISABLED'}")
     if not (PDF_SUPPORT or PDFPLUMBER_SUPPORT):
