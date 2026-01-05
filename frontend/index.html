@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Detector & Checker | Advanced AI Content Detection</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+                <h1>AI Detector<span class="pro">Pro</span></h1>
+            </div>
+            <nav class="nav">
+                <a href="#features"><i class="fas fa-star"></i> Features</a>
+                <a href="#how-it-works"><i class="fas fa-question-circle"></i> How It Works</a>
+                <a href="#api"><i class="fas fa-code"></i> API</a>
+                <button class="btn-secondary" id="historyBtn">
+                    <i class="fas fa-history"></i> History
+                </button>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-text">
+                    <h2>Advanced AI Content Detection</h2>
+                    <p>Detect AI-generated text with 95%+ accuracy. Analyze essays, articles, emails, and more.</p>
+                    <div class="stats">
+                        <div class="stat">
+                            <i class="fas fa-bolt"></i>
+                            <span>Real-time Analysis</span>
+                        </div>
+                        <div class="stat">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>95% Accuracy</span>
+                        </div>
+                        <div class="stat">
+                            <i class="fas fa-infinity"></i>
+                            <span>Unlimited Checks</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="pulse-circle"></div>
+                    <i class="fas fa-search magnifying-glass"></i>
+                </div>
+            </section>
+
+            <!-- Detection Area -->
+            <section class="detection-area">
+                <div class="input-section">
+                    <div class="input-header">
+                        <h3><i class="fas fa-edit"></i> Enter Text to Analyze</h3>
+                        <div class="word-count">
+                            <span id="wordCount">0 words</span>
+                        </div>
+                    </div>
+                    
+                    <textarea 
+                        id="textInput" 
+                        placeholder="Paste or type your text here (minimum 20 words)..."
+                        rows="8"
+                    ></textarea>
+                    
+                    <div class="input-actions">
+                        <button class="btn-action" onclick="clearText()">
+                            <i class="fas fa-eraser"></i> Clear
+                        </button>
+                        <button class="btn-action" onclick="pasteText()">
+                            <i class="fas fa-paste"></i> Paste
+                        </button>
+                        <button class="btn-action" onclick="loadSample()">
+                            <i class="fas fa-vial"></i> Sample
+                        </button>
+                        <button class="btn-primary" onclick="analyzeText()" id="analyzeBtn">
+                            <i class="fas fa-search"></i> Analyze Text
+                        </button>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="file-upload">
+                        <input type="file" id="fileInput" accept=".txt,.doc,.docx,.pdf">
+                        <label for="fileInput" class="file-label">
+                            <i class="fas fa-upload"></i> Upload Document
+                        </label>
+                        <span class="file-info">Supports TXT, DOC, PDF</span>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="results-section" id="resultsSection">
+                    <div class="results-header">
+                        <h3><i class="fas fa-chart-bar"></i> Analysis Results</h3>
+                        <div class="result-status" id="resultStatus">
+                            Waiting for analysis...
+                        </div>
+                    </div>
+                    
+                    <div class="results-content">
+                        <!-- Probability Display -->
+                        <div class="probability-display">
+                            <div class="probability human" id="humanProbability">
+                                <div class="probability-label">
+                                    <i class="fas fa-user"></i>
+                                    <span>Human</span>
+                                </div>
+                                <div class="probability-value">50%</div>
+                                <div class="probability-bar">
+                                    <div class="probability-fill human-fill" style="width: 50%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="probability ai" id="aiProbability">
+                                <div class="probability-label">
+                                    <i class="fas fa-robot"></i>
+                                    <span>AI</span>
+                                </div>
+                                <div class="probability-value">50%</div>
+                                <div class="probability-bar">
+                                    <div class="probability-fill ai-fill" style="width: 50%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Results -->
+                        <div class="detailed-results">
+                            <div class="result-card">
+                                <div class="card-header">
+                                    <i class="fas fa-brain"></i>
+                                    <h4>Verdict</h4>
+                                </div>
+                                <div class="card-content" id="verdictText">
+                                    Analysis pending...
+                                </div>
+                            </div>
+                            
+                            <div class="result-card">
+                                <div class="card-header">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                    <h4>Confidence</h4>
+                                </div>
+                                <div class="card-content">
+                                    <div class="confidence-meter">
+                                        <div class="confidence-fill" id="confidenceFill"></div>
+                                    </div>
+                                    <span class="confidence-value" id="confidenceValue">0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Text Metrics -->
+                        <div class="metrics-grid">
+                            <div class="metric">
+                                <i class="fas fa-font"></i>
+                                <span class="metric-value" id="metricWords">0</span>
+                                <span class="metric-label">Words</span>
+                            </div>
+                            <div class="metric">
+                                <i class="fas fa-paragraph"></i>
+                                <span class="metric-value" id="metricSentences">0</span>
+                                <span class="metric-label">Sentences</span>
+                            </div>
+                            <div class="metric">
+                                <i class="fas fa-clock"></i>
+                                <span class="metric-value" id="metricReadingTime">0</span>
+                                <span class="metric-label">Min Read</span>
+                            </div>
+                            <div class="metric">
+                                <i class="fas fa-chart-line"></i>
+                                <span class="metric-value" id="metricDiversity">0</span>
+                                <span class="metric-label">Diversity</span>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Details -->
+                        <div class="analysis-details">
+                            <h4><i class="fas fa-microscope"></i> Detailed Analysis</h4>
+                            <ul class="analysis-list" id="analysisList">
+                                <li>No analysis performed yet</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features Section -->
+            <section class="features-section" id="features">
+                <h2><i class="fas fa-cogs"></i> Advanced Detection Features</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h4>Statistical Analysis</h4>
+                        <p>Analyzes word frequency, sentence structure, and linguistic patterns.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-fingerprint"></i>
+                        </div>
+                        <h4>AI Model Fingerprinting</h4>
+                        <p>Identifies patterns specific to GPT-4, ChatGPT, Claude, and other models.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <h4>Pattern Recognition</h4>
+                        <p>Detects repetition and predictable structures common in AI text.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <h4>Historical Comparison</h4>
+                        <p>Compares with previous analyses to improve accuracy over time.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>AI Detector Pro</h4>
+                    <p>Advanced AI content detection for educators, publishers, and content creators.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p>support@aidetector.com</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 AI Detector Pro. All rights reserved.</p>
+                <p>Accuracy may vary. Use as a supplementary tool only.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-history"></i> Analysis History</h3>
+                <button class="close-modal" onclick="closeHistoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="history-list" id="historyList">
+                    <!-- History items will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Analyzing text...</p>
+            <p class="loading-sub">Checking for AI patterns and fingerprints</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
