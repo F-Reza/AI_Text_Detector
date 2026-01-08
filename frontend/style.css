@@ -2544,6 +2544,11 @@ textarea:focus:valid {
     flex-wrap: wrap;
 }
 
+.dev-info {
+    background: #565778;
+    color: #ffffff;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .param-row {
