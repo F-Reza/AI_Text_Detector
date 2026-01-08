@@ -1102,7 +1102,7 @@ function loadSavedHistory() {
             if (!item || typeof item !== 'object') continue;
             
             // Generate content hash if not exists
-            const textForHash = item.text_preview || '';
+            const textForHash = item.full_text || item.text_preview || '';
             const contentHash = item.content_hash || createContentHash(textForHash.substring(0, 500));
             
             // Skip duplicates
@@ -1153,7 +1153,22 @@ function loadSavedHistory() {
 function saveHistory() {
     try {
         console.log('Saving history to localStorage:', recentAnalyses);
-        const historyString = JSON.stringify(recentAnalyses);
+        
+        // Create a copy to avoid circular references
+        const historyToSave = recentAnalyses.map(item => {
+            return {
+                id: item.id,
+                timestamp: item.timestamp,
+                result: item.result,
+                text_preview: item.text_preview,
+                full_text: item.full_text, // Ensure full_text is saved
+                wordCount: item.wordCount,
+                model_version: item.model_version,
+                content_hash: item.content_hash
+            };
+        });
+        
+        const historyString = JSON.stringify(historyToSave);
         localStorage.setItem('aiDetectorHistory', historyString);
         console.log(`Successfully saved ${recentAnalyses.length} history items to localStorage`);
         return true;
@@ -1163,11 +1178,12 @@ function saveHistory() {
     }
 }
 
+
 // Load history for display - FIXED
 async function loadHistory() {
     console.log('loadHistory called');
     try {
-        showLoading(true, 'Loading history...');
+        // showLoading(true, 'Loading history...');
         
         // Always reload fresh data from localStorage
         loadSavedHistory();
@@ -1221,6 +1237,7 @@ function displayHistory(history) {
         const confidence = item.result?.confidence || 0;
         const timestamp = item.timestamp || new Date().toISOString();
         const textPreview = item.text_preview || item.textPreview || 'No preview available';
+        const fullText = item.full_text || item.text_preview || ''; // Get full text if available
         const wordCount = item.wordCount || item.result?.text_metrics?.words || 0;
         const id = item.id || Date.now() + index;
         
@@ -1237,6 +1254,7 @@ function displayHistory(history) {
             position: relative;
         `;
         historyItem.dataset.id = id;
+        historyItem.dataset.fullText = fullText; // Store full text in data attribute
         
         // Delete button
         const deleteButton = document.createElement('button');
@@ -1276,10 +1294,22 @@ function displayHistory(history) {
         
         historyItem.appendChild(deleteButton);
         
-        // Click to load
+        // Click to load - FIXED to use full text
         historyItem.addEventListener('click', (e) => {
             if (!e.target.classList.contains('delete-history-item')) {
-                if (textPreview && !textPreview.includes('No preview')) {
+                const fullText = historyItem.dataset.fullText;
+                if (fullText && fullText.trim()) {
+                    if (fullText.startsWith('File: ')) {
+                        showError('Cannot load file analysis', 'File uploads store only previews. Please re-upload the file.');
+                        return;
+                    }
+                    
+                    textInput.value = fullText;
+                    updateWordCount();
+                    closeHistoryModal();
+                    showSuccess('History item loaded.', 'Full text restored. Click "Analyze Text" to re-analyze or edit first.');
+                } else {
+                    // Fallback to preview text if full text not available
                     let text = textPreview;
                     if (textPreview.startsWith('File: ')) {
                         showError('Cannot load file analysis', 'File uploads store only previews. Please re-upload the file.');
@@ -1290,7 +1320,7 @@ function displayHistory(history) {
                     textInput.value = text;
                     updateWordCount();
                     closeHistoryModal();
-                    showSuccess('History item loaded.', 'Click "Analyze Text" to re-analyze or edit first.');
+                    showSuccess('History item loaded (preview only).', 'Click "Analyze Text" to re-analyze or edit first.');
                 }
             }
         });
@@ -1419,7 +1449,9 @@ function saveToRecentAnalyses(data, text) {
             confidence: data.confidence,
             text_metrics: data.text_metrics
         },
+        // Save both preview AND full text
         text_preview: text.substring(0, 150) + (text.length > 150 ? '...' : ''),
+        full_text: text, // ADD THIS: Save the full text
         wordCount: data.text_metrics?.words || 0,
         model_version: data.model_version || '1.0.0',
         content_hash: textHash
@@ -1445,7 +1477,6 @@ function saveToRecentAnalyses(data, text) {
     saveHistory();
     console.log(`Saved new analysis to history. Total: ${recentAnalyses.length} items`);
 }
-
 // Content hash function
 function createContentHash(text) {
     if (!text) return '0';
@@ -2530,9 +2561,13 @@ async function handleFileUpload(event) {
             if (data.extracted_text) {
                 textInput.value = data.extracted_text;
                 updateWordCount();
+                
+                // Save to history with full extracted text
+                saveToRecentAnalyses(data, data.extracted_text);
+            } else {
+                // If no extracted text, save file info
+                saveToRecentAnalyses(data, `File: ${file.name}`);
             }
-            
-            saveToRecentAnalyses(data, `File: ${file.name}`);
             
             // Show export button
             const exportBtn = document.querySelector('.export-btn');
@@ -2552,6 +2587,7 @@ async function handleFileUpload(event) {
         event.target.value = '';
     }
 }
+
 
 // Clear text function
 function clearText() {

@@ -1,14 +1,13 @@
 {
+  "accuracy": 1.0,
   "training_samples": 1600,
-  "cv_accuracy": 1.0,
-  "cv_std": 0.0,
+  "test_samples": 400,
+  "feature_count": 22,
   "top_features": [
     "long_word_ratio",
-    "human_pattern_score",
     "avg_word_length",
-    "stopword_ratio",
-    "flesch_score"
-  ],
-  "timestamp": "2026-01-08T11:54:46.507784",
-  "version": "2.0.0-ml-enhanced"
+    "human_pattern_score",
+    "flesch_score",
+    "ai_pattern_score"
+  ]
 }
