@@ -2620,12 +2620,12 @@ textarea:focus:valid {
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
-    box-shadow: 0 4px 20px rgba(67, 97, 238, 0.3);
+    box-shadow: var(--box-shadow);
     z-index: 100;
     opacity: 0;
     visibility: hidden;
     transform: translateY(20px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
 }
 
 .go-to-top-btn.show {
@@ -2636,110 +2636,26 @@ textarea:focus:valid {
 
 .go-to-top-btn:hover {
     background: linear-gradient(135deg, var(--primary-dark), var(--secondary-color));
-    transform: translateY(-5px) scale(1.1);
+    transform: translateY(-3px) scale(1.1);
     box-shadow: 0 6px 25px rgba(67, 97, 238, 0.4);
 }
 
 .go-to-top-btn:active {
-    transform: translateY(-2px) scale(1.05);
+    transform: translateY(-1px) scale(1.05);
 }
 
-/* Progress Indicator (Optional Enhanced Version) */
-.go-to-top-btn.progress {
-    position: relative;
+/* Modal visibility */
+.modal.show {
+    display: flex !important;
 }
 
-.go-to-top-btn.progress::before {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    background: conic-gradient(
-        var(--primary-color) 0%,
-        var(--secondary-color) var(--progress, 0%),
-        transparent var(--progress, 0%) 100%
-    );
-    border-radius: 50%;
-    z-index: -1;
-    animation: rotate 2s linear infinite;
-}
-
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* Tooltip for the button */
-.go-to-top-btn::after {
-    content: 'Go to Top';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--dark-color);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-    pointer-events: none;
-    z-index: 101;
-}
-
-.go-to-top-btn::after {
-    margin-bottom: 10px;
-}
-
-.go-to-top-btn:hover::after {
-    opacity: 1;
-    visibility: visible;
-    margin-bottom: 15px;
-}
-
-.go-to-top-btn::after::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: var(--dark-color);
-}
-
-/* Enhanced Version with Scroll Progress */
-.go-to-top-btn.enhanced {
-    width: 60px;
-    height: 60px;
-}
-
-.go-to-top-btn.enhanced .scroll-progress {
-    position: absolute;
-    top: -5px;
-    left: -5px;
-    right: -5px;
-    bottom: -5px;
-    border-radius: 50%;
-    background: conic-gradient(
-        var(--primary-color) 0%,
-        var(--secondary-color) 0%,
-        transparent 0% 100%
-    );
-    z-index: -1;
-    transition: background 0.3s ease;
-}
-
-.go-to-top-btn.enhanced i {
-    position: relative;
-    z-index: 2;
-}
-
-/* Responsive styles for mobile */
+/* Responsive adjustments for modals */
 @media (max-width: 768px) {
+    .modal-content {
+        width: 95% !important;
+        max-height: 90vh !important;
+    }
+    
     .go-to-top-btn {
         bottom: 20px;
         right: 20px;
@@ -2747,23 +2663,72 @@ textarea:focus:valid {
         height: 45px;
         font-size: 1rem;
     }
-    
-    .go-to-top-btn.enhanced {
-        width: 50px;
-        height: 50px;
-    }
-    
-    .go-to-top-btn::after {
-        display: none; /* Hide tooltip on mobile for cleaner look */
-    }
 }
 
-/* For very small screens */
 @media (max-width: 480px) {
     .go-to-top-btn {
         bottom: 15px;
         right: 15px;
         width: 40px;
         height: 40px;
+    }
+    
+    .modal-content {
+        width: 98% !important;
+    }
+}
+
+
+/* Pulse animation for Go to Top button */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
+    }
+}
+
+.go-to-top-btn.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* API Key Actions */
+.api-key-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Show modal with display: flex */
+.modal.show {
+    display: flex !important;
+}
+
+/* Ensure modals are on top */
+.modal {
+    z-index: 1000;
+}
+
+/* Ensure Go to Top button is above modals */
+.go-to-top-btn {
+    z-index: 999;
+}
+
+/* Responsive modal fixes */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95% !important;
+        max-height: 90vh !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        width: 98% !important;
     }
 }

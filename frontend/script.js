@@ -60,6 +60,9 @@ function initializeApp() {
     // Initialize UI enhancements
     initializeUIEnhancements();
     
+    // Initialize Go to Top button
+    initializeGoToTopButton();
+    
     // Initialize currentAnalysisId
     window.currentAnalysisId = null;
     
@@ -3466,7 +3469,42 @@ function highlightCodeBlocks() {
     });
 }
 
-
+// Initialize Go to Top button
+function initializeGoToTopButton() {
+    const goToTopBtn = document.getElementById('goToTopBtn');
+    if (!goToTopBtn) {
+        console.error('Go to Top button not found!');
+        return;
+    }
+    
+    console.log('Initializing Go to Top button...');
+    
+    // Show/hide button based on scroll
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 100) {
+            goToTopBtn.classList.add('show');
+        } else {
+            goToTopBtn.classList.remove('show');
+        }
+    });
+    
+    // Click event to scroll to top
+    goToTopBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+        console.log('Scrolling to top...');
+    });
+    
+    // Initialize button visibility
+    if (window.scrollY > 100) {
+        goToTopBtn.classList.add('show');
+    }
+    
+    console.log('Go to Top button initialized');
+}
 
 const apiKeyStyles = `
 <style>
