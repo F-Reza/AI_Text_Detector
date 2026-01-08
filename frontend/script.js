@@ -14,9 +14,11 @@ const historyModal = document.getElementById('historyModal');
 const historyList = document.getElementById('historyList');
 const loadingOverlay = document.getElementById('loadingOverlay');
 
-// Global variables
-let currentAnalysisData = null;
+// ============================================
+// FIXED: SINGLE GLOBAL HISTORY REFERENCE
+// ============================================
 let recentAnalyses = [];
+window.recentAnalyses = recentAnalyses; // Make it global
 
 // Enhanced sample texts for better testing
 const ENHANCED_SAMPLES = {
@@ -58,7 +60,7 @@ function initializeApp() {
     // Initialize UI enhancements
     initializeUIEnhancements();
     
-    // **ADD: Initialize currentAnalysisId**
+    // Initialize currentAnalysisId
     window.currentAnalysisId = null;
     
     console.log('AI Detector Pro Enhanced Edition initialized');
@@ -872,7 +874,7 @@ function showHelp() {
     });
 }
 
-// Analyze text function - COMPLETE FIXED VERSION
+// Analyze text function
 async function analyzeText() {
     // Prevent multiple simultaneous analyses
     if (analyzeBtn.disabled || analyzeBtn.innerHTML.includes('fa-spinner')) {
@@ -957,34 +959,8 @@ async function analyzeText() {
             
             resultsSection.classList.add('show');
             
-            // **FIX: Save to history - ONLY ONCE and only if successful**
-            // Check if we already have a very similar recent analysis
-            const isDuplicate = recentAnalyses.some(item => {
-                if (!item.result) return false;
-                
-                // Check text similarity
-                const currentPreview = text.substring(0, 150);
-                const itemPreview = item.text_preview || '';
-                
-                // If text previews are very similar (80% match), consider duplicate
-                if (currentPreview.length > 50 && itemPreview.length > 50) {
-                    const similarity = calculateTextSimilarity(currentPreview, itemPreview);
-                    if (similarity > 0.8) {
-                        return true;
-                    }
-                }
-                
-                // Check if results are identical
-                return Math.abs(item.result.ai_probability - data.ai_probability) < 0.5 &&
-                       item.result.is_ai_generated === data.is_ai_generated &&
-                       Math.abs(item.wordCount - (data.text_metrics?.words || 0)) < 3;
-            });
-            
-            if (!isDuplicate) {
-                saveToRecentAnalyses(data, text);
-            } else {
-                console.log('Duplicate analysis detected, not saving to history');
-            }
+            // Save to history
+            saveToRecentAnalyses(data, text);
             
             // Show export button
             const exportBtn = document.querySelector('.export-btn');
@@ -1086,11 +1062,480 @@ function displayEnhancedResults(data) {
     
     // Add explanation
     addResultExplanation(data);
-    
-    // Update model status - REMOVED duplicate call
-    // updateModelStatus('active', `Using ${data.model_version || 'Enhanced ML Model'}`);
 }
 
+// ============================================
+// FIXED HISTORY FUNCTIONS
+// ============================================
+
+// Load saved history from localStorage - COMPLETELY FIXED
+function loadSavedHistory() {
+    console.log('loadSavedHistory called');
+    try {
+        const savedHistory = localStorage.getItem('aiDetectorHistory');
+        console.log('Saved history from localStorage:', savedHistory);
+        
+        if (!savedHistory || savedHistory === '[]' || savedHistory === 'null') {
+            console.log('No history found or empty history in localStorage');
+            recentAnalyses = [];
+            window.recentAnalyses = recentAnalyses; // Update global reference
+            return false;
+        }
+        
+        const parsedHistory = JSON.parse(savedHistory);
+        console.log('Parsed history:', parsedHistory);
+        
+        if (!Array.isArray(parsedHistory)) {
+            console.error('Invalid history format in localStorage');
+            recentAnalyses = [];
+            window.recentAnalyses = recentAnalyses;
+            localStorage.removeItem('aiDetectorHistory'); // Clear corrupted data
+            return false;
+        }
+        
+        // Remove duplicates based on content hash
+        const uniqueHistory = [];
+        const seenHashes = new Set();
+        
+        for (let i = 0; i < parsedHistory.length; i++) {
+            const item = parsedHistory[i];
+            if (!item || typeof item !== 'object') continue;
+            
+            // Generate content hash if not exists
+            const textForHash = item.text_preview || '';
+            const contentHash = item.content_hash || createContentHash(textForHash.substring(0, 500));
+            
+            // Skip duplicates
+            if (seenHashes.has(contentHash)) {
+                continue;
+            }
+            seenHashes.add(contentHash);
+            
+            // Ensure required fields
+            if (!item.id) {
+                item.id = Date.now() + i;
+            }
+            
+            if (!item.timestamp) {
+                item.timestamp = new Date().toISOString();
+            }
+            
+            // Add content hash if not present
+            if (!item.content_hash) {
+                item.content_hash = contentHash;
+            }
+            
+            uniqueHistory.push(item);
+        }
+        
+        // Limit to 20 items
+        recentAnalyses = uniqueHistory.slice(0, 20);
+        window.recentAnalyses = recentAnalyses; // Update global reference
+        
+        console.log(`Loaded ${recentAnalyses.length} unique history items from localStorage`);
+        return true;
+        
+    } catch (error) {
+        console.error('Error loading history from localStorage:', error);
+        recentAnalyses = [];
+        window.recentAnalyses = recentAnalyses;
+        
+        // Clear corrupted data
+        try {
+            localStorage.removeItem('aiDetectorHistory');
+        } catch {}
+        
+        return false;
+    }
+}
+
+// Save history to localStorage - FIXED
+function saveHistory() {
+    try {
+        console.log('Saving history to localStorage:', recentAnalyses);
+        const historyString = JSON.stringify(recentAnalyses);
+        localStorage.setItem('aiDetectorHistory', historyString);
+        console.log(`Successfully saved ${recentAnalyses.length} history items to localStorage`);
+        return true;
+    } catch (error) {
+        console.error('Error saving history to localStorage:', error);
+        return false;
+    }
+}
+
+// Load history for display - FIXED
+async function loadHistory() {
+    console.log('loadHistory called');
+    try {
+        showLoading(true, 'Loading history...');
+        
+        // Always reload fresh data from localStorage
+        loadSavedHistory();
+        
+        // Display the current history
+        displayHistory(recentAnalyses);
+        
+    } catch (error) {
+        console.error('History load error:', error);
+        displayHistory(recentAnalyses);
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Display history in modal - FIXED
+function displayHistory(history) {
+    console.log('displayHistory called with:', history);
+    if (!historyList) return;
+    
+    // Clear the list
+    historyList.innerHTML = '';
+    
+    if (!history || history.length === 0) {
+        historyList.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #6b7280;">
+                <i class="fas fa-history fa-3x" style="margin-bottom: 15px; opacity: 0.5;"></i>
+                <p>No analysis history yet.</p>
+                <p style="font-size: 0.9rem;">Analyze some text to see it here!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Create clear all button
+    const clearAllButton = document.createElement('div');
+    clearAllButton.className = 'history-actions';
+    clearAllButton.innerHTML = `
+        <button onclick="clearAllHistory()" class="clear-history-btn" style="margin-left: auto;">
+            <i class="fas fa-trash-alt"></i> Clear All History (${history.length} items)
+        </button>
+    `;
+    historyList.appendChild(clearAllButton);
+    
+    // Display history items
+    const limitedHistory = history.slice(0, 20);
+    
+    limitedHistory.forEach((item, index) => {
+        const isAI = item.result?.is_ai_generated || item.isAI || false;
+        const aiProb = item.result?.ai_probability || item.aiProbability || 0;
+        const confidence = item.result?.confidence || 0;
+        const timestamp = item.timestamp || new Date().toISOString();
+        const textPreview = item.text_preview || item.textPreview || 'No preview available';
+        const wordCount = item.wordCount || item.result?.text_metrics?.words || 0;
+        const id = item.id || Date.now() + index;
+        
+        const historyItem = document.createElement('div');
+        historyItem.className = `history-item ${isAI ? 'ai' : 'human'}`;
+        historyItem.style.cssText = `
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid ${isAI ? '#ef4444' : '#10b981'};
+            background: white;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+            position: relative;
+        `;
+        historyItem.dataset.id = id;
+        
+        // Delete button
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'delete-history-item';
+        deleteButton.innerHTML = '<i class="fas fa-times"></i>';
+        deleteButton.title = 'Delete this history item';
+        deleteButton.onclick = (e) => {
+            e.stopPropagation();
+            deleteHistoryItem(id);
+        };
+        
+        historyItem.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                <div>
+                    <strong style="color: ${isAI ? '#ef4444' : '#10b981'};">
+                        ${isAI ? '🤖 AI' : '👤 Human'} - ${aiProb}% AI
+                    </strong>
+                    <div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">
+                        ${formatDate(timestamp)}
+                    </div>
+                </div>
+                <div style="font-size: 0.8rem; background: ${confidence >= 80 ? '#10b98120' : confidence >= 60 ? '#f59e0b20' : '#ef444420'}; 
+                     color: ${confidence >= 80 ? '#059669' : confidence >= 60 ? '#d97706' : '#dc2626'}; 
+                     padding: 2px 8px; border-radius: 4px;">
+                    ${confidence}% conf
+                </div>
+            </div>
+            <div class="history-preview" style="font-size: 0.9rem; color: #6b7280; line-height: 1.4; margin-right: 25px;">
+                ${textPreview}
+            </div>
+            ${wordCount ? `
+                <div class="history-meta" style="margin-top: 8px; font-size: 0.8rem; color: #9ca3af;">
+                    <i class="fas fa-font"></i> ${wordCount} words
+                </div>
+            ` : ''}
+        `;
+        
+        historyItem.appendChild(deleteButton);
+        
+        // Click to load
+        historyItem.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('delete-history-item')) {
+                if (textPreview && !textPreview.includes('No preview')) {
+                    let text = textPreview;
+                    if (textPreview.startsWith('File: ')) {
+                        showError('Cannot load file analysis', 'File uploads store only previews. Please re-upload the file.');
+                        return;
+                    }
+                    
+                    text = text.replace(/\.\.\.$/, '');
+                    textInput.value = text;
+                    updateWordCount();
+                    closeHistoryModal();
+                    showSuccess('History item loaded.', 'Click "Analyze Text" to re-analyze or edit first.');
+                }
+            }
+        });
+        
+        historyList.appendChild(historyItem);
+    });
+    
+    // Add stats
+    const statsDiv = document.createElement('div');
+    statsDiv.className = 'history-stats';
+    statsDiv.style.cssText = `
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        font-size: 0.9rem;
+        color: #6b7280;
+        text-align: center;
+    `;
+    
+    const aiCount = history.filter(item => item.result?.is_ai_generated || item.isAI).length;
+    const humanCount = history.length - aiCount;
+    
+    statsDiv.innerHTML = `
+        <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 10px;">
+            <span><i class="fas fa-robot" style="color: #ef4444;"></i> ${aiCount} AI</span>
+            <span><i class="fas fa-user" style="color: #10b981;"></i> ${humanCount} Human</span>
+            <span><i class="fas fa-list" style="color: #6b7280;"></i> ${history.length} Total</span>
+        </div>
+        <div style="font-size: 0.8rem;">
+            History is automatically saved to your browser's localStorage
+        </div>
+    `;
+    
+    historyList.appendChild(statsDiv);
+}
+
+// Delete a single history item - FIXED
+function deleteHistoryItem(id) {
+    if (!confirm('Are you sure you want to delete this history item?')) {
+        return;
+    }
+    
+    // Find the index of the item to delete
+    const itemIndex = recentAnalyses.findIndex(item => {
+        const itemId = item.id || item._id;
+        return itemId && itemId.toString() === id.toString();
+    });
+    
+    if (itemIndex === -1) {
+        showError('Item not found.', 'The history item may have already been deleted.');
+        return;
+    }
+    
+    // Remove the item from the array
+    recentAnalyses.splice(itemIndex, 1);
+    window.recentAnalyses = recentAnalyses; // Update global reference
+    
+    // Save to localStorage
+    saveHistory();
+    
+    // Update display
+    displayHistory(recentAnalyses);
+    
+    showSuccess('History item deleted.', 'Item removed from history.');
+}
+
+// Clear all history - COMPLETELY FIXED
+function clearAllHistory() {
+    console.log('clearAllHistory called, current history:', recentAnalyses);
+    
+    if (!recentAnalyses || recentAnalyses.length === 0) {
+        showError('No history to clear.', 'Your history is already empty.');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete all ${recentAnalyses.length} history items?\n\nThis action cannot be undone.`)) {
+        return;
+    }
+    
+    const count = recentAnalyses.length;
+    
+    // Clear the array - assign new empty array to break all references
+    recentAnalyses = [];
+    window.recentAnalyses = recentAnalyses; // Update global reference
+    
+    // Clear localStorage
+    try {
+        localStorage.removeItem('aiDetectorHistory');
+        localStorage.setItem('aiDetectorHistory', JSON.stringify([]));
+        console.log('Successfully cleared localStorage');
+    } catch (error) {
+        console.error('Error clearing localStorage:', error);
+        try {
+            localStorage.clear();
+        } catch (e) {
+            console.error('Could not clear localStorage:', e);
+        }
+    }
+    
+    // Update display
+    if (historyModal && historyModal.classList.contains('show')) {
+        displayHistory(recentAnalyses);
+    }
+    
+    // Show success message
+    showSuccess(`Cleared ${count} history items.`, 'All analysis history has been removed.');
+    
+    console.log('After clear - recentAnalyses:', recentAnalyses);
+}
+
+// Save to recent analyses - FIXED
+function saveToRecentAnalyses(data, text) {
+    console.log('saveToRecentAnalyses called');
+    
+    // Create a unique content hash to prevent duplicates
+    const textHash = createContentHash(text.substring(0, 500));
+    const timestamp = new Date().toISOString();
+    
+    const newId = Date.now() + Math.floor(Math.random() * 1000);
+    const analysis = {
+        id: newId,
+        timestamp: timestamp,
+        result: {
+            ai_probability: data.ai_probability,
+            is_ai_generated: data.is_ai_generated,
+            confidence: data.confidence,
+            text_metrics: data.text_metrics
+        },
+        text_preview: text.substring(0, 150) + (text.length > 150 ? '...' : ''),
+        wordCount: data.text_metrics?.words || 0,
+        model_version: data.model_version || '1.0.0',
+        content_hash: textHash
+    };
+    
+    // Remove any existing items with similar content
+    recentAnalyses = recentAnalyses.filter(item => {
+        const itemTextHash = item.content_hash || createContentHash((item.text_preview || '').substring(0, 500));
+        return itemTextHash !== textHash;
+    });
+    
+    // Add new analysis to beginning
+    recentAnalyses.unshift(analysis);
+    window.recentAnalyses = recentAnalyses; // Update global reference
+    
+    // Keep only 20 most recent
+    if (recentAnalyses.length > 20) {
+        recentAnalyses = recentAnalyses.slice(0, 20);
+        window.recentAnalyses = recentAnalyses;
+    }
+    
+    // Save to localStorage
+    saveHistory();
+    console.log(`Saved new analysis to history. Total: ${recentAnalyses.length} items`);
+}
+
+// Content hash function
+function createContentHash(text) {
+    if (!text) return '0';
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+        const char = text.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(36);
+}
+
+// Open history modal - FIXED
+function openHistoryModal() {
+    console.log('openHistoryModal called');
+    // Always load fresh data from localStorage
+    loadHistory();
+    if (historyModal) historyModal.classList.add('show');
+}
+
+function closeHistoryModal() {
+    if (historyModal) historyModal.classList.remove('show');
+}
+
+// Format date
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) {
+            return 'Just now';
+        } else if (diffMins < 60) {
+            return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+        } else if (diffHours < 24) {
+            return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+        } else if (diffDays < 7) {
+            return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+        } else {
+            return date.toLocaleDateString();
+        }
+    } catch {
+        return 'Unknown date';
+    }
+}
+
+// Ensure all history items have proper IDs
+function ensureHistoryIds() {
+    let needsSave = false;
+    recentAnalyses.forEach((item, index) => {
+        if (!item.id) {
+            if (item.timestamp) {
+                item.id = new Date(item.timestamp).getTime();
+            } else {
+                item.id = Date.now() + index;
+            }
+            needsSave = true;
+        }
+    });
+    
+    if (needsSave) {
+        saveHistory();
+    }
+}
+
+// This function to clean up old history
+function cleanupOldHistory() {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    
+    const initialLength = recentAnalyses.length;
+    recentAnalyses = recentAnalyses.filter(item => {
+        try {
+            if (!item.timestamp) return false;
+            const itemDate = new Date(item.timestamp);
+            return itemDate > oneMonthAgo;
+        } catch {
+            return false;
+        }
+    });
+    
+    if (recentAnalyses.length !== initialLength) {
+        saveHistory();
+        console.log(`Cleaned up ${initialLength - recentAnalyses.length} old history items`);
+    }
+}
 
 // Update probabilities with enhanced animation
 function updateProbabilities(aiProb, humanProb) {
@@ -2110,9 +2555,9 @@ async function handleFileUpload(event) {
 
 // Clear text function
 function clearText() {
-    if (textInput.value.trim() && !confirm('Clear all text and results?')) {
-        return;
-    }
+    // if (textInput.value.trim() && !confirm('Clear all text and results?')) {
+    //     return;
+    // }
     
     textInput.value = '';
     updateWordCount();
@@ -2430,603 +2875,6 @@ function exportResults() {
     showSuccess('Results exported successfully!', `Saved as ${link.download}`);
 }
 
-// ============================================
-// FIXED HISTORY FUNCTIONS
-// ============================================
-
-// This function to clean up old history
-function cleanupOldHistory() {
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    
-    const initialLength = recentAnalyses.length;
-    recentAnalyses = recentAnalyses.filter(item => {
-        try {
-            if (!item.timestamp) return false;
-            const itemDate = new Date(item.timestamp);
-            return itemDate > oneMonthAgo;
-        } catch {
-            return false;
-        }
-    });
-    
-    if (recentAnalyses.length !== initialLength) {
-        saveHistory();
-        console.log(`Cleaned up ${initialLength - recentAnalyses.length} old history items`);
-    }
-}
-
-// Load saved history from localStorage
-function loadSavedHistory() {
-    try {
-        const savedHistory = localStorage.getItem('aiDetectorHistory');
-        if (!savedHistory) {
-            console.log('No history found in localStorage');
-            recentAnalyses = [];
-            return false;
-        }
-        
-        const parsedHistory = JSON.parse(savedHistory);
-        if (!Array.isArray(parsedHistory)) {
-            console.error('Invalid history format in localStorage');
-            recentAnalyses = [];
-            localStorage.removeItem('aiDetectorHistory'); // Clear corrupted data
-            return false;
-        }
-        
-        // Remove duplicates based on content hash
-        const uniqueHistory = [];
-        const seenHashes = new Set();
-        
-        for (let i = 0; i < parsedHistory.length; i++) {
-            const item = parsedHistory[i];
-            if (!item || typeof item !== 'object') continue;
-            
-            // Generate content hash if not exists
-            const textForHash = item.text_preview || '';
-            const contentHash = item.content_hash || createContentHash(textForHash.substring(0, 500));
-            
-            // Skip duplicates
-            if (seenHashes.has(contentHash)) {
-                continue;
-            }
-            seenHashes.add(contentHash);
-            
-            // Ensure required fields
-            if (!item.id) {
-                item.id = Date.now() + i;
-            }
-            
-            if (!item.timestamp) {
-                item.timestamp = new Date().toISOString();
-            }
-            
-            // Add content hash if not present
-            if (!item.content_hash) {
-                item.content_hash = contentHash;
-            }
-            
-            uniqueHistory.push(item);
-        }
-        
-        // Limit to 20 items
-        recentAnalyses = uniqueHistory.slice(0, 20);
-        
-        console.log(`Loaded ${recentAnalyses.length} unique history items from localStorage`);
-        return true;
-        
-    } catch (error) {
-        console.error('Error loading history from localStorage:', error);
-        recentAnalyses = [];
-        
-        // Clear corrupted data
-        try {
-            localStorage.removeItem('aiDetectorHistory');
-        } catch {}
-        
-        return false;
-    }
-}
-
-// Add this helper function to force refresh history display
-function refreshHistoryDisplay() {
-    if (historyModal && historyModal.classList.contains('show') && historyList) {
-        displayHistory(recentAnalyses);
-    }
-}
-
-// Save history to localStorage
-function saveHistory() {
-    try {
-        // Stringify with error handling for circular references
-        const historyString = JSON.stringify(recentAnalyses, (key, value) => {
-            // Handle special cases
-            if (value instanceof Error) {
-                return {
-                    message: value.message,
-                    stack: value.stack,
-                    name: value.name
-                };
-            }
-            return value;
-        });
-        
-        localStorage.setItem('aiDetectorHistory', historyString);
-        console.log(`Successfully saved ${recentAnalyses.length} history items to localStorage`);
-        return true;
-    } catch (error) {
-        console.error('Error saving history to localStorage:', error);
-        
-        // Try to save at least some data
-        try {
-            // Save a simplified version
-            const simplifiedHistory = recentAnalyses.map(item => ({
-                id: item.id,
-                timestamp: item.timestamp,
-                text_preview: item.text_preview,
-                wordCount: item.wordCount,
-                result: item.result ? {
-                    ai_probability: item.result.ai_probability,
-                    is_ai_generated: item.result.is_ai_generated,
-                    confidence: item.result.confidence
-                } : null
-            }));
-            
-            localStorage.setItem('aiDetectorHistory', JSON.stringify(simplifiedHistory));
-            console.log('Saved simplified history due to serialization error');
-            return true;
-        } catch (innerError) {
-            console.error('Could not save even simplified history:', innerError);
-            
-            // Try to clear localStorage if it's corrupted
-            try {
-                localStorage.removeItem('aiDetectorHistory');
-                console.log('Cleared potentially corrupted localStorage');
-            } catch (clearError) {
-                console.error('Could not clear localStorage:', clearError);
-            }
-            
-            return false;
-        }
-    }
-}
-
-// Load history for display
-async function loadHistory() {
-    try {
-        showLoading(true, 'Loading history...');
-        
-        // Always use local history first
-        displayHistory(recentAnalyses);
-        
-        // Try to sync with server in background
-        try {
-            const response = await fetch(`${API_BASE_URL}/history?limit=20`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success && data.history && data.history.length > 0) {
-                    // Merge server history with local, removing duplicates
-                    const serverHistory = data.history;
-                    const existingIds = new Set(recentAnalyses.map(item => item.id));
-                    
-                    serverHistory.forEach(serverItem => {
-                        if (!existingIds.has(serverItem.id)) {
-                            recentAnalyses.unshift(serverItem);
-                        }
-                    });
-                    
-                    // Keep only 20 most recent
-                    if (recentAnalyses.length > 20) {
-                        recentAnalyses = recentAnalyses.slice(0, 20);
-                    }
-                    
-                    // Save merged history
-                    saveHistory();
-                    
-                    // Update display with merged history
-                    displayHistory(recentAnalyses);
-                }
-            }
-        } catch (serverError) {
-            console.log('Server history not available, using local history only');
-        }
-        
-    } catch (error) {
-        console.error('History load error:', error);
-        displayHistory(recentAnalyses);
-    } finally {
-        showLoading(false);
-    }
-}
-
-// Display history in modal - FIXED VERSION
-function displayHistory(history) {
-    if (!historyList) return;
-    
-    // Clear the list
-    historyList.innerHTML = '';
-    
-    if (!history || history.length === 0) {
-        historyList.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #6b7280;">
-                <i class="fas fa-history fa-3x" style="margin-bottom: 15px; opacity: 0.5;"></i>
-                <p>No analysis history yet.</p>
-                <p style="font-size: 0.9rem;">Analyze some text to see it here!</p>
-            </div>
-        `;
-        return;
-    }
-    
-    // Create clear all button
-    const clearAllButton = document.createElement('div');
-    clearAllButton.className = 'history-actions';
-    clearAllButton.innerHTML = `
-        <button onclick="clearAllHistory()" class="clear-history-btn" style="margin-left: auto;">
-            <i class="fas fa-trash-alt"></i> Clear All History (${history.length} items)
-        </button>
-    `;
-    historyList.appendChild(clearAllButton);
-    
-    // Display history items
-    const limitedHistory = history.slice(0, 20);
-    
-    limitedHistory.forEach((item, index) => {
-        // Ensure item has all required properties
-        const isAI = item.result?.is_ai_generated || item.isAI || false;
-        const aiProb = item.result?.ai_probability || item.aiProbability || 0;
-        const confidence = item.result?.confidence || 0;
-        const timestamp = item.timestamp || new Date().toISOString();
-        const textPreview = item.text_preview || item.textPreview || 'No preview available';
-        const wordCount = item.wordCount || item.result?.text_metrics?.words || 0;
-        const id = item.id || Date.now() + index;
-        
-        // Update item with any missing properties
-        if (!item.id) item.id = id;
-        if (!item.timestamp) item.timestamp = timestamp;
-        
-        const historyItem = document.createElement('div');
-        historyItem.className = `history-item ${isAI ? 'ai' : 'human'}`;
-        historyItem.style.cssText = `
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            border-left: 4px solid ${isAI ? '#ef4444' : '#10b981'};
-            background: white;
-            transition: all 0.2s;
-            border: 1px solid #e5e7eb;
-            position: relative;
-        `;
-        historyItem.dataset.id = id;
-        
-        // Delete button
-        const deleteButton = document.createElement('button');
-        deleteButton.className = 'delete-history-item';
-        deleteButton.innerHTML = '<i class="fas fa-times"></i>';
-        deleteButton.title = 'Delete this history item';
-        deleteButton.onclick = (e) => {
-            e.stopPropagation();
-            deleteHistoryItem(id);
-        };
-        
-        historyItem.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                <div>
-                    <strong style="color: ${isAI ? '#ef4444' : '#10b981'};">
-                        ${isAI ? '🤖 AI' : '👤 Human'} - ${aiProb}% AI
-                    </strong>
-                    <div style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">
-                        ${formatDate(timestamp)}
-                    </div>
-                </div>
-                <div style="font-size: 0.8rem; background: ${confidence >= 80 ? '#10b98120' : confidence >= 60 ? '#f59e0b20' : '#ef444420'}; 
-                     color: ${confidence >= 80 ? '#059669' : confidence >= 60 ? '#d97706' : '#dc2626'}; 
-                     padding: 2px 8px; border-radius: 4px;">
-                    ${confidence}% conf
-                </div>
-            </div>
-            <div class="history-preview" style="font-size: 0.9rem; color: #6b7280; line-height: 1.4; margin-right: 25px;">
-                ${textPreview}
-            </div>
-            ${wordCount ? `
-                <div class="history-meta" style="margin-top: 8px; font-size: 0.8rem; color: #9ca3af;">
-                    <i class="fas fa-font"></i> ${wordCount} words
-                </div>
-            ` : ''}
-        `;
-        
-        historyItem.appendChild(deleteButton);
-        
-        // Click to load
-        historyItem.addEventListener('click', (e) => {
-            if (!e.target.classList.contains('delete-history-item')) {
-                if (textPreview && !textPreview.includes('No preview')) {
-                    let text = textPreview;
-                    if (textPreview.startsWith('File: ')) {
-                        showError('Cannot load file analysis', 'File uploads store only previews. Please re-upload the file.');
-                        return;
-                    }
-                    
-                    text = text.replace(/\.\.\.$/, '');
-                    textInput.value = text;
-                    updateWordCount();
-                    closeHistoryModal();
-                    showSuccess('History item loaded.', 'Click "Analyze Text" to re-analyze or edit first.');
-                }
-            }
-        });
-        
-        historyList.appendChild(historyItem);
-    });
-    
-    // Add stats
-    const statsDiv = document.createElement('div');
-    statsDiv.className = 'history-stats';
-    statsDiv.style.cssText = `
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 1px solid #e5e7eb;
-        font-size: 0.9rem;
-        color: #6b7280;
-        text-align: center;
-    `;
-    
-    const aiCount = history.filter(item => item.result?.is_ai_generated || item.isAI).length;
-    const humanCount = history.length - aiCount;
-    
-    statsDiv.innerHTML = `
-        <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 10px;">
-            <span><i class="fas fa-robot" style="color: #ef4444;"></i> ${aiCount} AI</span>
-            <span><i class="fas fa-user" style="color: #10b981;"></i> ${humanCount} Human</span>
-            <span><i class="fas fa-list" style="color: #6b7280;"></i> ${history.length} Total</span>
-        </div>
-        <div style="font-size: 0.8rem;">
-            History is automatically saved to your browser's localStorage
-        </div>
-    `;
-    
-    historyList.appendChild(statsDiv);
-}
-
-// Delete a single history item - FIXED VERSION
-function deleteHistoryItem(id) {
-    if (!confirm('Are you sure you want to delete this history item?')) {
-        return;
-    }
-    
-    // Store the count before deletion
-    const initialCount = recentAnalyses.length;
-    
-    // Find the index of the item to delete
-    const itemIndex = recentAnalyses.findIndex(item => {
-        // Check all possible ID fields
-        const itemId = item.id || item._id;
-        return itemId && itemId.toString() === id.toString();
-    });
-    
-    // If item not found by ID, try to find by content
-    if (itemIndex === -1) {
-        showError('Item not found.', 'The history item may have already been deleted.');
-        return;
-    }
-    
-    // Remove the item from the array
-    recentAnalyses.splice(itemIndex, 1);
-    
-    // Save to localStorage
-    const saveSuccess = saveHistory();
-    
-    if (!saveSuccess) {
-        showError('Failed to save changes to localStorage.', 'The item may not have been permanently deleted.');
-        return;
-    }
-    
-    // Update display if history modal is open
-    if (historyModal.classList.contains('show')) {
-        displayHistory(recentAnalyses);
-    }
-    
-    // Show feedback
-    showSuccess('History item deleted.', 'Item removed from history.');
-}
-
-// Clear all history - COMPLETELY FIXED VERSION
-function clearAllHistory() {
-    if (!recentAnalyses || recentAnalyses.length === 0) {
-        showError('No history to clear.', 'Your history is already empty.');
-        return;
-    }
-    
-    if (!confirm(`Are you sure you want to delete all ${recentAnalyses.length} history items?\n\nThis action cannot be undone.`)) {
-        return;
-    }
-    
-    const count = recentAnalyses.length;
-    
-    // Clear the array using splice (more reliable)
-    recentAnalyses.splice(0, recentAnalyses.length);
-    
-    // Clear localStorage with multiple approaches
-    try {
-        localStorage.removeItem('aiDetectorHistory');
-        // Also set it to empty array to ensure
-        localStorage.setItem('aiDetectorHistory', JSON.stringify([]));
-        console.log('Successfully cleared localStorage');
-    } catch (error) {
-        console.error('Error clearing localStorage:', error);
-        // Try alternative method
-        try {
-            localStorage.clear();
-        } catch (e) {
-            console.error('Could not clear localStorage:', e);
-        }
-    }
-    
-    // Update the global variable
-    window.recentAnalyses = [];
-    
-    // Update display immediately if modal is open
-    if (historyModal && historyModal.classList.contains('show')) {
-        displayHistory([]);
-    }
-    
-    // Show success message
-    showSuccess(`Cleared ${count} history items.`, 'All analysis history has been removed.');
-    
-    // Log for debugging
-    console.log(`History cleared. Recent analyses array length: ${recentAnalyses.length}`);
-}
-
-// Ensure all history items have proper IDs
-function ensureHistoryIds() {
-    recentAnalyses.forEach((item, index) => {
-        if (!item.id) {
-            // Create an ID from timestamp or generate one
-            if (item.timestamp) {
-                item.id = new Date(item.timestamp).getTime();
-            } else {
-                item.id = Date.now() + index;
-            }
-        }
-    });
-    
-    // Save after ensuring IDs
-    saveHistory();
-}
-
-function openHistoryModal() {
-    loadHistory();
-    if (historyModal) historyModal.classList.add('show');
-}
-
-function closeHistoryModal() {
-    if (historyModal) historyModal.classList.remove('show');
-}
-
-// Format date
-function formatDate(dateString) {
-    try {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-        
-        if (diffMins < 1) {
-            return 'Just now';
-        } else if (diffMins < 60) {
-            return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
-        } else if (diffHours < 24) {
-            return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-        } else if (diffDays < 7) {
-            return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
-        } else {
-            return date.toLocaleDateString();
-        }
-    } catch {
-        return 'Unknown date';
-    }
-}
-
-// Save to recent analyses - FIXED to prevent duplicates
-function saveToRecentAnalyses(data, text) {
-    console.log('Saving analysis to history...');
-    
-    // Create a unique content hash to prevent duplicates
-    const textHash = createContentHash(text.substring(0, 500));
-    const timestamp = new Date().toISOString();
-    
-    // Check for recent duplicates (within last 30 seconds with same content)
-    const now = Date.now();
-    const thirtySecondsAgo = now - 30000;
-    
-    const isRecentDuplicate = recentAnalyses.some(item => {
-        if (!item.timestamp) return false;
-        
-        const itemTime = new Date(item.timestamp).getTime();
-        const timeDiff = now - itemTime;
-        
-        // If same analysis was done in last 30 seconds, check content
-        if (timeDiff < 30000) {
-            const itemTextHash = item.content_hash || createContentHash((item.text_preview || '').substring(0, 500));
-            return itemTextHash === textHash;
-        }
-        
-        return false;
-    });
-    
-    if (isRecentDuplicate) {
-        console.log('Recent duplicate analysis detected, not saving');
-        return;
-    }
-    
-    const newId = Date.now() + Math.floor(Math.random() * 1000);
-    const analysis = {
-        id: newId,
-        timestamp: timestamp,
-        result: {
-            ai_probability: data.ai_probability,
-            is_ai_generated: data.is_ai_generated,
-            confidence: data.confidence,
-            text_metrics: data.text_metrics
-        },
-        text_preview: text.substring(0, 150) + (text.length > 150 ? '...' : ''),
-        wordCount: data.text_metrics?.words || 0,
-        model_version: data.model_version || '1.0.0',
-        content_hash: textHash
-    };
-    
-    // Remove any existing items with similar content
-    recentAnalyses = recentAnalyses.filter(item => {
-        const itemTextHash = item.content_hash || createContentHash((item.text_preview || '').substring(0, 500));
-        return itemTextHash !== textHash;
-    });
-    
-    // Add new analysis to beginning
-    recentAnalyses.unshift(analysis);
-    
-    // Keep only 20 most recent
-    if (recentAnalyses.length > 20) {
-        recentAnalyses = recentAnalyses.slice(0, 20);
-    }
-    
-    // Save to localStorage
-    saveHistory();
-    console.log(`Saved new analysis to history. Total: ${recentAnalyses.length} items`);
-}
-
-// Content hash function
-function createContentHash(text) {
-    if (!text) return '0';
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-        const char = text.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash).toString(36);
-}
-
-// Remove duplicate history entries
-function removeDuplicateHistory() {
-    const uniqueAnalyses = [];
-    const seenTexts = new Set();
-    
-    for (const analysis of recentAnalyses) {
-        const textKey = analysis.text_preview?.substring(0, 100) || '';
-        if (!seenTexts.has(textKey)) {
-            seenTexts.add(textKey);
-            uniqueAnalyses.push(analysis);
-        }
-    }
-    
-    if (uniqueAnalyses.length !== recentAnalyses.length) {
-        console.log(`Removed ${recentAnalyses.length - uniqueAnalyses.length} duplicate history entries`);
-        recentAnalyses = uniqueAnalyses;
-        saveHistory();
-    }
-}
-
 // Make sure the new functions are available globally
 window.refreshHistoryDisplay = refreshHistoryDisplay;
 
@@ -3309,6 +3157,7 @@ function displayResults(data) {
                     <i class="fas fa-robot"></i>
                     <h3>AI-GENERATED CONTENT DETECTED</h3>
                     <p>${aiProb}% AI probability</p>
+                </div>
             `;
         } else {
             verdictText.innerHTML = `
