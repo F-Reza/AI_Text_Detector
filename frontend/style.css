@@ -192,7 +192,7 @@ body {
 
 /* Detection Area */
 .detection-area {
-    background: white;
+    background: #b0b0b0;
     border-radius: var(--border-radius);
     padding: 30px;
     margin-bottom: 40px;
@@ -750,6 +750,7 @@ textarea:focus {
     padding: 15px;
     border-radius: var(--border-radius);
     transition: var(--transition);
+    /* background: #e4e5e8; */
 }
 
 .stat-item:hover {
@@ -787,7 +788,7 @@ textarea:focus {
 
 /* Features Section */
 .features-section {
-    background: white;
+    background: #b0b0b0;
     border-radius: var(--border-radius);
     padding: 40px;
     margin-bottom: 40px;
@@ -821,7 +822,8 @@ textarea:focus {
 .feature-icon {
     width: 70px;
     height: 70px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    /* background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); */
+    background: linear-gradient(135deg, #4364ff, #0976b7);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1205,7 +1207,7 @@ textarea:focus {
 
 .feature-importance-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
     gap: 18px;
     margin-top: 18px;
 }
@@ -2597,5 +2599,171 @@ textarea:focus:valid {
     
     .api-badge {
         align-self: flex-start;
+    }
+}
+
+
+
+/* Go to Top Button */
+.go-to-top-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 20px rgba(67, 97, 238, 0.3);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.go-to-top-btn.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.go-to-top-btn:hover {
+    background: linear-gradient(135deg, var(--primary-dark), var(--secondary-color));
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 6px 25px rgba(67, 97, 238, 0.4);
+}
+
+.go-to-top-btn:active {
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* Progress Indicator (Optional Enhanced Version) */
+.go-to-top-btn.progress {
+    position: relative;
+}
+
+.go-to-top-btn.progress::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    background: conic-gradient(
+        var(--primary-color) 0%,
+        var(--secondary-color) var(--progress, 0%),
+        transparent var(--progress, 0%) 100%
+    );
+    border-radius: 50%;
+    z-index: -1;
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Tooltip for the button */
+.go-to-top-btn::after {
+    content: 'Go to Top';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--dark-color);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 101;
+}
+
+.go-to-top-btn::after {
+    margin-bottom: 10px;
+}
+
+.go-to-top-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+    margin-bottom: 15px;
+}
+
+.go-to-top-btn::after::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--dark-color);
+}
+
+/* Enhanced Version with Scroll Progress */
+.go-to-top-btn.enhanced {
+    width: 60px;
+    height: 60px;
+}
+
+.go-to-top-btn.enhanced .scroll-progress {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--primary-color) 0%,
+        var(--secondary-color) 0%,
+        transparent 0% 100%
+    );
+    z-index: -1;
+    transition: background 0.3s ease;
+}
+
+.go-to-top-btn.enhanced i {
+    position: relative;
+    z-index: 2;
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 768px) {
+    .go-to-top-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+        font-size: 1rem;
+    }
+    
+    .go-to-top-btn.enhanced {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .go-to-top-btn::after {
+        display: none; /* Hide tooltip on mobile for cleaner look */
+    }
+}
+
+/* For very small screens */
+@media (max-width: 480px) {
+    .go-to-top-btn {
+        bottom: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
     }
 }

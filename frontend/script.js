@@ -3210,7 +3210,7 @@ async function checkBackendStatus() {
                 showSuccess('Backend connected successfully!', 'Enhanced AI detection model is active.');
             } else {
                 updateModelStatus('active', 'Basic Model Ready');
-                showSuccess('Backend connected!', 'Using basic detection model.');
+                // showSuccess('Backend connected!', 'Using basic detection model.');
             }
         } else {
             console.warn('⚠ Backend returned error');
