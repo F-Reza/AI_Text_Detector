@@ -686,6 +686,45 @@ function setupEventListeners() {
             closeHistoryModal();
         }
     });
+
+
+
+    document.querySelectorAll('a[href="#how-it-works"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            openHowItWorksModal();
+        });
+    });
+    
+    // Close modal on background click
+    const howItWorksModal = document.getElementById('howItWorksModal');
+    if (howItWorksModal) {
+        howItWorksModal.addEventListener('click', function(e) {
+            if (e.target === howItWorksModal || e.target.classList.contains('close-modal')) {
+                closeHowItWorksModal();
+            }
+        });
+    }
+    
+
+    // API link
+    document.querySelectorAll('a[href="#api"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            openApiModal();
+        });
+    });
+    
+    // Close API modal on background click
+    const apiModal = document.getElementById('apiModal');
+    if (apiModal) {
+        apiModal.addEventListener('click', function(e) {
+            if (e.target === apiModal || e.target.classList.contains('close-modal')) {
+                closeApiModal();
+            }
+        });
+    }
+
     
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcuts);
@@ -3016,6 +3055,17 @@ function handleKeyboardShortcuts(e) {
         e.preventDefault();
         openHistoryModal();
     }
+
+    // Escape to close how it works modal
+    if (e.key === 'Escape' && howItWorksModal && howItWorksModal.classList.contains('show')) {
+        closeHowItWorksModal();
+    }
+
+    // Escape to close API modal
+    const apiModal = document.getElementById('apiModal');
+    if (e.key === 'Escape' && apiModal && apiModal.classList.contains('show')) {
+        closeApiModal();
+    }
 }
 
 // Loading overlay
@@ -3227,7 +3277,224 @@ function displayResults(data) {
     updateModelStatus('active', 'Basic Model Active');
 }
 
+
+
+// How It Works Modal Functions
+function openHowItWorksModal() {
+    const modal = document.getElementById('howItWorksModal');
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+    }
+}
+
+function closeHowItWorksModal() {
+    const modal = document.getElementById('howItWorksModal');
+    if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = ''; // Restore scrolling
+    }
+}
+
+
+
+// API Modal Functions
+function openApiModal() {
+    const modal = document.getElementById('apiModal');
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        
+        // Highlight syntax (if you have highlight.js or similar)
+        highlightCodeBlocks();
+    }
+}
+
+function closeApiModal() {
+    const modal = document.getElementById('apiModal');
+    if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+}
+
+// Copy code function
+function copyCode(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const text = element.innerText || element.textContent;
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            const btn = event?.target?.closest('.copy-btn');
+            if (btn) {
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                btn.disabled = true;
+                btn.style.background = '#10b981';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                    btn.style.background = '';
+                }, 2000);
+            }
+            showSuccess('Code copied to clipboard!');
+        })
+        .catch(err => {
+            console.error('Copy failed:', err);
+            showError('Failed to copy code.');
+        });
+}
+
+// Copy base URL
+function copyBaseUrl() {
+    const baseUrl = 'http://localhost:5000/api';
+    navigator.clipboard.writeText(baseUrl)
+        .then(() => {
+            showSuccess('Base URL copied to clipboard!', baseUrl);
+        })
+        .catch(err => {
+            console.error('Copy failed:', err);
+            showError('Failed to copy base URL.');
+        });
+}
+
+// Select plan function
+function selectPlan(plan) {
+    const plans = {
+        free: 'Free Tier',
+        pro: 'Pro Plan',
+        enterprise: 'Enterprise Plan'
+    };
+    
+    showSuccess(`Selected ${plans[plan]}`, plan === 'enterprise' ? 'Redirecting to contact form...' : 'Redirecting to signup...');
+    
+    // Simulate API call or redirect
+    setTimeout(() => {
+        if (plan === 'enterprise') {
+            window.open('mailto:sales@aidetector.com?subject=Enterprise%20API%20Plan%20Inquiry', '_blank');
+        } else {
+            window.open(`#signup?plan=${plan}`, '_blank');
+        }
+        closeApiModal();
+    }, 1000);
+}
+
+// Get API key function
+function getApiKey() {
+    showLoading(true, 'Generating API key...');
+    
+    // Simulate API call
+    setTimeout(() => {
+        showLoading(false);
+        const apiKey = 'detector_' + Math.random().toString(36).substr(2, 16) + '_' + Date.now().toString(36);
+        
+        // Create a modal to show the API key
+        const apiKeyModal = document.createElement('div');
+        apiKeyModal.className = 'modal';
+        apiKeyModal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-key"></i> Your API Key</h3>
+                    <button class="close-modal" onclick="this.parentElement.parentElement.remove()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="text-align: center; padding: 20px;">
+                        <p style="margin-bottom: 15px;">Your API key has been generated successfully.</p>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; font-family: 'Roboto Mono', monospace; word-break: break-all;">
+                            ${apiKey}
+                        </div>
+                        <p style="color: #dc2626; font-size: 0.9rem; margin-bottom: 20px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Save this key securely. It won't be shown again.
+                        </p>
+                        <div class="api-key-actions">
+                            <button class="btn-primary" onclick="copyApiKey('${apiKey}')">
+                                <i class="fas fa-copy"></i> Copy Key
+                            </button>
+                            <button class="btn-secondary" onclick="closeApiModal(); this.closest('.modal').remove();">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(apiKeyModal);
+        setTimeout(() => apiKeyModal.classList.add('show'), 10);
+    }, 1500);
+}
+
+// Copy API key
+function copyApiKey(key) {
+    navigator.clipboard.writeText(key)
+        .then(() => {
+            showSuccess('API key copied to clipboard!', 'Store it in a secure location.');
+        })
+        .catch(err => {
+            console.error('Copy failed:', err);
+            showError('Failed to copy API key.');
+        });
+}
+
+// Simple code highlighting
+function highlightCodeBlocks() {
+    const codeBlocks = document.querySelectorAll('pre code');
+    codeBlocks.forEach(block => {
+        // Simple syntax highlighting for common keywords
+        let code = block.textContent;
+        
+        // Highlight keywords
+        code = code.replace(/\b(curl|POST|GET|HEADERS|Content-Type|X-API-Key|fetch|method|headers|body|then|catch|import|def|class|function|return|if|else|for|while)\b/g, 
+            '<span class="hljs-keyword">$1</span>');
+        
+        // Highlight strings
+        code = code.replace(/(['"])(.*?)\1/g, 
+            '<span class="hljs-string">$1$2$1</span>');
+        
+        // Highlight numbers
+        code = code.replace(/\b(\d+)\b/g, 
+            '<span class="hljs-number">$1</span>');
+        
+        // Highlight comments
+        code = code.replace(/(#.*$)/gm, 
+            '<span class="hljs-comment">$1</span>');
+        
+        block.innerHTML = code;
+    });
+}
+
+
+
+const apiKeyStyles = `
+<style>
+.api-key-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+</style>
+`;
+document.head.insertAdjacentHTML('beforeend', apiKeyStyles);
+
+
+
 // Make functions globally available
+window.openHowItWorksModal = openHowItWorksModal;
+window.closeHowItWorksModal = closeHowItWorksModal;
+
+// Make functions globally available
+window.openApiModal = openApiModal;
+window.closeApiModal = closeApiModal;
+window.copyCode = copyCode;
+window.copyBaseUrl = copyBaseUrl;
+window.selectPlan = selectPlan;
+window.getApiKey = getApiKey;
+window.copyApiKey = copyApiKey;
+
 window.clearText = clearText;
 window.pasteText = pasteText;
 window.loadSample = loadSample;

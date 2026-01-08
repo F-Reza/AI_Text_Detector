@@ -330,6 +330,466 @@
         </div>
     </div>
 
+
+    <!-- How It Works Modal -->
+    <div class="modal" id="howItWorksModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-question-circle"></i> How It Works</h3>
+                <button class="close-modal" onclick="closeHowItWorksModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="simple-how-it-works">
+                    <div class="step">
+                        <div class="step-icon">
+                            <i class="fas fa-keyboard"></i>
+                        </div>
+                        <div class="step-text">
+                            <h4>1. Enter Text</h4>
+                            <p>Paste or type any text (minimum 20 words recommended)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="step-text">
+                            <h4>2. AI Analysis</h4>
+                            <p>Our ML model analyzes linguistic patterns and AI fingerprints</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="step-text">
+                            <h4>3. Get Results</h4>
+                            <p>Receive AI probability score, confidence level, and highlighted text</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <div class="step-text">
+                            <h4>4. Take Action</h4>
+                            <p>Use insights to verify content authenticity or improve writing</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tip-box">
+                        <i class="fas fa-lightbulb"></i>
+                        <p><strong>Tip:</strong> For best accuracy, use 100+ words of continuous text</p>
+                    </div>
+                    
+                    <button class="btn-primary" onclick="closeHowItWorksModal(); analyzeText()" style="width: 100%; margin-top: 20px;">
+                        <i class="fas fa-play"></i> Start Analyzing
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- API Modal -->
+<div class="modal" id="apiModal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-code"></i> AI Detector API Documentation</h3>
+            <button class="close-modal" onclick="closeApiModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="api-documentation">
+                <!-- Quick Start -->
+                <div class="api-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-rocket"></i> Quick Start</h4>
+                        <span class="api-badge success">GET STARTED</span>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span>Example Request</span>
+                            <button class="copy-btn" onclick="copyCode('quickStartCode')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="quickStartCode"><code>curl -X POST "http://localhost:5000/api/detect" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Your text to analyze here...",
+    "language": "en",
+    "detailed": true
+  }'</code></pre>
+                    </div>
+                </div>
+
+                <!-- Authentication -->
+                <div class="api-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-key"></i> Authentication</h4>
+                        <span class="api-badge warning">REQUIRED FOR PRODUCTION</span>
+                    </div>
+                    <p>For production use, API keys are required. <a href="#" class="api-link">Get your API key</a></p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span>With API Key</span>
+                            <button class="copy-btn" onclick="copyCode('authCode')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="authCode"><code>curl -X POST "http://localhost:5000/api/detect" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY_HERE" \
+  -d '{"text": "Your text..."}'</code></pre>
+                    </div>
+                </div>
+
+                <!-- Endpoints -->
+                <div class="api-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-network-wired"></i> Endpoints</h4>
+                        <span class="api-badge info">3 ENDPOINTS AVAILABLE</span>
+                    </div>
+                    
+                    <!-- Detect Endpoint -->
+                    <div class="endpoint-card">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span class="endpoint-url">/api/detect</span>
+                            <span class="endpoint-status">Live</span>
+                        </div>
+                        <p class="endpoint-description">Main endpoint for AI content detection. Accepts text input and returns detailed analysis.</p>
+                        
+                        <div class="params-section">
+                            <h5><i class="fas fa-list"></i> Parameters</h5>
+                            <div class="params-table">
+                                <div class="param-row">
+                                    <span class="param-name">text</span>
+                                    <span class="param-type">string</span>
+                                    <span class="param-required">Required</span>
+                                    <span class="param-desc">Text content to analyze (min 20 words)</span>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-name">language</span>
+                                    <span class="param-type">string</span>
+                                    <span class="param-optional">Optional</span>
+                                    <span class="param-desc">Language code (default: "en")</span>
+                                </div>
+                                <div class="param-row">
+                                    <span class="param-name">detailed</span>
+                                    <span class="param-type">boolean</span>
+                                    <span class="param-optional">Optional</span>
+                                    <span class="param-desc">Return detailed analysis (default: true)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Endpoint -->
+                    <div class="endpoint-card">
+                        <div class="endpoint-header">
+                            <span class="method post">POST</span>
+                            <span class="endpoint-url">/api/upload</span>
+                            <span class="endpoint-status">Live</span>
+                        </div>
+                        <p class="endpoint-description">Upload files for analysis. Supports TXT, PDF, DOC, DOCX formats.</p>
+                        
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span>File Upload Example</span>
+                                <button class="copy-btn" onclick="copyCode('uploadCode')">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <pre id="uploadCode"><code>curl -X POST "http://localhost:5000/api/upload" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -F "file=@/path/to/your/document.pdf"</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Health Endpoint -->
+                    <div class="endpoint-card">
+                        <div class="endpoint-header">
+                            <span class="method get">GET</span>
+                            <span class="endpoint-url">/api/health</span>
+                            <span class="endpoint-status">Live</span>
+                        </div>
+                        <p class="endpoint-description">Check API status and service health.</p>
+                        
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span>Health Check</span>
+                                <button class="copy-btn" onclick="copyCode('healthCode')">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <pre id="healthCode"><code>curl -X GET "http://localhost:5000/api/health"</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Response Format -->
+                <div class="api-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-exchange-alt"></i> Response Format</h4>
+                        <span class="api-badge success">JSON</span>
+                    </div>
+                    
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span>Example Response</span>
+                            <button class="copy-btn" onclick="copyCode('responseCode')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        <pre id="responseCode"><code>{
+  "success": true,
+  "ai_probability": 85.7,
+  "human_probability": 14.3,
+  "is_ai_generated": true,
+  "confidence": 92.5,
+  "model_version": "enhanced-ml-v3.0",
+  "text_metrics": {
+    "words": 245,
+    "sentences": 15,
+    "reading_time": 1.2,
+    "characters": 1456
+  },
+  "features": {
+    "lexical_diversity": 0.68,
+    "average_sentence_length": 16.3,
+    "perplexity_score": 45.2
+  },
+  "sentence_analysis": [...],
+  "feature_importance": [...],
+  "analysis": [
+    "High AI probability detected",
+    "Uniform sentence structure",
+    "Characteristic AI phrasing patterns"
+  ]
+}</code></pre>
+                    </div>
+
+                    <div class="response-fields">
+                        <h5><i class="fas fa-table"></i> Response Fields</h5>
+                        <div class="fields-grid">
+                            <div class="field-item">
+                                <span class="field-name">ai_probability</span>
+                                <span class="field-type">float</span>
+                                <span class="field-desc">Probability text is AI-generated (0-100)</span>
+                            </div>
+                            <div class="field-item">
+                                <span class="field-name">confidence</span>
+                                <span class="field-type">float</span>
+                                <span class="field-desc">Model confidence in prediction (0-100)</span>
+                            </div>
+                            <div class="field-item">
+                                <span class="field-name">is_ai_generated</span>
+                                <span class="field-type">boolean</span>
+                                <span class="field-desc">Final verdict based on threshold</span>
+                            </div>
+                            <div class="field-item">
+                                <span class="field-name">model_version</span>
+                                <span class="field-type">string</span>
+                                <span class="field-desc">Version of detection model used</span>
+                            </div>
+                            <div class="field-item">
+                                <span class="field-name">sentence_analysis</span>
+                                <span class="field-type">array</span>
+                                <span class="field-desc">Sentence-by-sentence analysis</span>
+                            </div>
+                            <div class="field-item">
+                                <span class="field-name">feature_importance</span>
+                                <span class="field-type">array</span>
+                                <span class="field-desc">Key features influencing decision</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rate Limits & Pricing -->
+                <!-- <div class="api-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-chart-line"></i> Rate Limits & Pricing</h4>
+                        <span class="api-badge warning">IMPORTANT</span>
+                    </div>
+                    
+                    <div class="pricing-grid">
+                        <div class="pricing-card free">
+                            <div class="pricing-header">
+                                <h5>Free Tier</h5>
+                                <div class="pricing-price">$0<span>/month</span></div>
+                            </div>
+                            <ul class="pricing-features">
+                                <li><i class="fas fa-check"></i> 100 requests/day</li>
+                                <li><i class="fas fa-check"></i> Basic detection</li>
+                                <li><i class="fas fa-check"></i> 50k characters/request</li>
+                                <li><i class="fas fa-times"></i> No file uploads</li>
+                                <li><i class="fas fa-times"></i> No priority support</li>
+                            </ul>
+                            <button class="btn-secondary" onclick="selectPlan('free')">Select Plan</button>
+                        </div>
+
+                        <div class="pricing-card pro">
+                            <div class="pricing-header">
+                                <h5>Pro</h5>
+                                <div class="pricing-price">$29<span>/month</span></div>
+                                <span class="popular-badge">Most Popular</span>
+                            </div>
+                            <ul class="pricing-features">
+                                <li><i class="fas fa-check"></i> 5,000 requests/month</li>
+                                <li><i class="fas fa-check"></i> Enhanced detection</li>
+                                <li><i class="fas fa-check"></i> 200k characters/request</li>
+                                <li><i class="fas fa-check"></i> File uploads</li>
+                                <li><i class="fas fa-check"></i> Priority support</li>
+                            </ul>
+                            <button class="btn-primary" onclick="selectPlan('pro')">Select Plan</button>
+                        </div>
+
+                        <div class="pricing-card enterprise">
+                            <div class="pricing-header">
+                                <h5>Enterprise</h5>
+                                <div class="pricing-price">Custom</div>
+                            </div>
+                            <ul class="pricing-features">
+                                <li><i class="fas fa-check"></i> Unlimited requests</li>
+                                <li><i class="fas fa-check"></i> Advanced detection</li>
+                                <li><i class="fas fa-check"></i> No character limits</li>
+                                <li><i class="fas fa-check"></i> Batch processing</li>
+                                <li><i class="fas fa-check"></i> Dedicated support</li>
+                            </ul>
+                            <button class="btn-secondary" onclick="selectPlan('enterprise')">Contact Sales</button>
+                        </div>
+                    </div>
+                </div> -->
+
+                <!-- Testing & Examples -->
+                <!-- <div class="api-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-vial"></i> Testing & Examples</h4>
+                        <span class="api-badge info">TRY IT OUT</span>
+                    </div>
+                    
+                    <div class="examples-grid">
+                        <div class="example-card">
+                            <div class="example-header">
+                                <i class="fab fa-js-square"></i>
+                                <h5>JavaScript</h5>
+                            </div>
+                            <div class="code-block small">
+                                <pre><code>fetch('http://localhost:5000/api/detect', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'your_api_key'
+  },
+  body: JSON.stringify({
+    text: 'Your text here...'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="example-card">
+                            <div class="example-header">
+                                <i class="fab fa-python"></i>
+                                <h5>Python</h5>
+                            </div>
+                            <div class="code-block small">
+                                <pre><code>import requests
+
+response = requests.post(
+    'http://localhost:5000/api/detect',
+    headers={'X-API-Key': 'your_api_key'},
+    json={'text': 'Your text here...'}
+)
+print(response.json())</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="example-card">
+                            <div class="example-header">
+                                <i class="fab fa-php"></i>
+                                <h5>PHP</h5>
+                            </div>
+                            <div class="code-block small">
+                                <pre><code>$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, 
+    'http://localhost:5000/api/detect');
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'X-API-Key: your_api_key',
+    'Content-Type: application/json'
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, 
+    json_encode(['text' => 'Your text...']));
+$response = curl_exec($ch);
+curl_close($ch);</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+
+                <!-- Support -->
+                <div class="api-section support-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-life-ring"></i> Support</h4>
+                    </div>
+                    <div class="support-grid">
+                        <div class="support-item">
+                            <i class="fas fa-book"></i>
+                            <h5>Documentation</h5>
+                            <p>Complete API reference and guides</p>
+                            <a href="#" class="support-link">View Docs →</a>
+                        </div>
+                        <div class="support-item">
+                            <i class="fas fa-comments"></i>
+                            <h5>Community</h5>
+                            <p>Join our developer community</p>
+                            <a href="#" class="support-link">Join Discord →</a>
+                        </div>
+                        <div class="support-item">
+                            <i class="fas fa-envelope"></i>
+                            <h5>Contact</h5>
+                            <p>Email support for API issues</p>
+                            <a href="mailto:api@aidetector.com" class="support-link">Email Us →</a>
+                        </div>
+                        <div class="support-item">
+                            <i class="fas fa-github"></i>
+                            <h5>GitHub</h5>
+                            <p>Open source SDKs and examples</p>
+                            <a href="#" class="support-link">View Repo →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CTA -->
+                <div class="api-cta">
+                    <h4><i class="fas fa-bolt"></i> Ready to Integrate?</h4>
+                    <p>Start using our AI Detection API in your applications today.</p>
+                    <div class="cta-buttons">
+                        <button class="btn-primaryX" onclick="getApiKey()">
+                            <i class="fas fa-key"></i> Get API Key
+                        </button>
+                        <button class="btn-secondaryX" onclick="closeApiModal(); window.open('#features', '_blank');">
+                            <i class="fas fa-eye"></i> View Features
+                        </button>
+                        <button class="btn-action" onclick="copyBaseUrl()">
+                            <i class="fas fa-copy"></i> Copy Base URL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
     <script src="script.js"></script>
 </body>
 </html>
