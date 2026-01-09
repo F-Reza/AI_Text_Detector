@@ -3030,8 +3030,8 @@ textarea:focus:valid {
 
 
 button.humanizeX {
-    background: linear-gradient(135deg, #a40967, #a40967);
     /* background: linear-gradient(135deg, #5759ff, #1276f7); */
+    background: linear-gradient(135deg, #a40967, #a40967);
     color: white;
     border: none;
     padding: 12px 30px;
