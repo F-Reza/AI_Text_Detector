@@ -1650,6 +1650,7 @@ function updateProbabilities(aiProb, humanProb) {
     }
 }
 
+
 // Animate numeric value
 function animateValue(element, start, end, duration) {
     let startTime = null;
@@ -3307,7 +3308,6 @@ function displayResults(data) {
     
     updateModelStatus('active', 'Basic Model Active');
 }
-
 
 
 // How It Works Modal Functions
