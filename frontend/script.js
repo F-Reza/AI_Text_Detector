@@ -2653,6 +2653,34 @@ function clearText() {
     showSuccess('Text cleared successfully.');
 }
 
+async function analyzeHumanizedText() {
+    const textOutput = document.getElementById('textOutput');
+    if (!textOutput || !textOutput.value.trim()) {
+        showError('No humanized text to analyze.', 'Please humanize text first.');
+        return;
+    }
+    
+    // Put humanized text into main input
+    textInput.value = textOutput.value;
+    updateWordCount();
+    
+    // Show success message
+    showSuccess('Humanized text loaded for analysis.', 'Click "Analyze Text" to analyze it.');
+    
+    // Scroll back to input
+    document.querySelector('.input-section').scrollIntoView({ behavior: 'smooth' });
+}
+function clearHumanizedText() {
+
+    textOutput.value = '';
+    updateWordCount();
+    // Reset displays
+    resetDisplays();
+    
+    showSuccess('Text cleared successfully.');
+}
+
+
 // Reset all displays to default
 function resetDisplays() {
     // Reset probabilities
@@ -3517,6 +3545,386 @@ const apiKeyStyles = `
 </style>
 `;
 document.head.insertAdjacentHTML('beforeend', apiKeyStyles);
+
+
+
+
+// Global variables for humanize functionality
+let currentHumanizedData = null;
+let originalHumanizeText = '';
+
+// Humanize Text Function
+async function humanizeText() {
+    const text = textInput.value.trim();
+    const words = text.split(/\s+/).filter(word => word.length > 0);
+    
+    // Validation
+    if (words.length < 10) {
+        showError('Please enter at least 10 words for humanization.', 'For best results, use 20+ words.');
+        return;
+    }
+    
+    // Get humanization parameters
+    const intensity = document.getElementById('humanizeIntensity').value;
+    const style = document.getElementById('humanizeStyle').value;
+    
+    showLoading(true, 'Humanizing text...');
+    
+    try {
+        console.log('Sending humanize request with:', { 
+            textLength: text.length, 
+            wordCount: words.length,
+            intensity, 
+            style 
+        });
+        
+        // Call humanize API
+        const humanizeResponse = await fetch(`${API_BASE_URL}/humanize`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text: text,
+                intensity: intensity,
+                style: style
+            })
+        });
+        
+        console.log('Response status:', humanizeResponse.status);
+        
+        const responseText = await humanizeResponse.text();
+        console.log('Raw response:', responseText);
+        
+        let humanizeData;
+        try {
+            humanizeData = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Failed to parse JSON:', parseError);
+            throw new Error(`Invalid response from server: ${responseText.substring(0, 100)}`);
+        }
+        
+        if (!humanizeResponse.ok) {
+            throw new Error(humanizeData.error || `Server error: ${humanizeResponse.status}`);
+        }
+        
+        if (humanizeData.success) {
+            // Set the global variables
+            window.currentHumanizedData = humanizeData;
+            window.originalHumanizeText = text;
+            
+            console.log('Humanization successful:', {
+                improvement: humanizeData.analysis.improvement,
+                wordsChanged: humanizeData.analysis.words_changed
+            });
+            
+            // Display humanized results
+            displayHumanizedResults(humanizeData);
+            
+            // Show humanize section
+            showHumanizeSection(true);
+            
+            showSuccess(`Text humanized successfully! ${humanizeData.analysis.improvement}% more human.`);
+        } else {
+            throw new Error(humanizeData.error || 'Humanization failed');
+        }
+        
+    } catch (error) {
+        console.error('Humanization error:', error);
+        showError(`Humanization failed: ${error.message}`, 'Please check the console for more details.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Display Humanized Results
+function displayHumanizedResults(data) {
+    // Show humanize section
+    const humanizeSection = document.getElementById('humanizeSection');
+    if (humanizeSection) {
+        humanizeSection.style.display = 'block';
+        
+        // Scroll to humanize section
+        setTimeout(() => {
+            humanizeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+    
+    // Update stats
+    const improvementValue = document.getElementById('improvementValue');
+    const wordsChanged = document.getElementById('wordsChanged');
+    
+    if (improvementValue) {
+        improvementValue.textContent = `${data.analysis.improvement}%`;
+        improvementValue.style.color = data.analysis.improvement > 20 ? '#10b981' : 
+                                     data.analysis.improvement > 10 ? '#f59e0b' : '#ef4444';
+    }
+    
+    if (wordsChanged) {
+        wordsChanged.textContent = data.analysis.words_changed || 0;
+    }
+    
+    // Display original text
+    const originalTextOutput = document.getElementById('originalTextOutput');
+    const originalAIProb = document.getElementById('originalAIProb');
+    const originalWordCount = document.getElementById('originalWordCount');
+    
+    if (originalTextOutput) {
+        originalTextOutput.textContent = data.original_text || window.originalHumanizeText;
+    }
+    
+    if (originalAIProb) {
+        originalAIProb.textContent = data.analysis.original_ai_probability || '0';
+        originalAIProb.style.color = data.analysis.original_ai_probability > 70 ? '#ef4444' : 
+                                   data.analysis.original_ai_probability > 40 ? '#f59e0b' : '#10b981';
+    }
+    
+    if (originalWordCount) {
+        const words = (data.original_text || window.originalHumanizeText).split(/\s+/).length;
+        originalWordCount.textContent = words;
+    }
+    
+    // Display humanized text
+    const textOutput = document.getElementById('textOutput');
+    const humanizedAIProb = document.getElementById('humanizedAIProb');
+    const humanizedWordCount = document.getElementById('humanizedWordCount');
+    
+    if (textOutput && data.humanized_text) {
+        textOutput.value = data.humanized_text;
+        updateHumanizedWordCount();
+    }
+    
+    if (humanizedAIProb) {
+        humanizedAIProb.textContent = data.analysis.humanized_ai_probability || '0';
+        humanizedAIProb.style.color = data.analysis.humanized_ai_probability > 70 ? '#ef4444' : 
+                                    data.analysis.humanized_ai_probability > 40 ? '#f59e0b' : '#10b981';
+    }
+    
+    if (humanizedWordCount) {
+        const words = (data.humanized_text || '').split(/\s+/).length;
+        humanizedWordCount.textContent = words;
+    }
+    
+    // Show comparison highlights
+    highlightDifferences(data.original_text, data.humanized_text);
+}
+
+// Show/Hide Humanize Section
+function showHumanizeSection(show) {
+    const humanizeSection = document.getElementById('humanizeSection');
+    const featuresSection = document.querySelector('.features-section');
+    
+    if (humanizeSection && featuresSection) {
+        if (show) {
+            humanizeSection.style.display = 'block';
+            // Scroll to humanize section
+            setTimeout(() => {
+                humanizeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        } else {
+            humanizeSection.style.display = 'none';
+            // Scroll back to features
+            featuresSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+}
+
+// Update Humanized Word Count
+function updateHumanizedWordCount() {
+    const textOutput = document.getElementById('textOutput');
+    const humanizedWordCount = document.getElementById('humanizedWordCount');
+    
+    if (textOutput && humanizedWordCount) {
+        const words = textOutput.value.split(/\s+/).filter(word => word.length > 0);
+        humanizedWordCount.textContent = words.length;
+    }
+}
+
+// Copy Humanized Text
+function copyHumanizedText() {
+    const textOutput = document.getElementById('textOutput');
+    if (!textOutput || !textOutput.value.trim()) {
+        showError('No humanized text to copy.', 'Please humanize text first.');
+        return;
+    }
+    
+    navigator.clipboard.writeText(textOutput.value)
+        .then(() => {
+            // Show success feedback
+            const btn = event.target.closest('button');
+            if (btn) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                btn.disabled = true;
+                btn.style.background = '#10b981';
+                btn.style.color = 'white';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 2000);
+            }
+            
+            showSuccess('Humanized text copied to clipboard!');
+        })
+        .catch(err => {
+            console.error('Copy failed:', err);
+            showError('Failed to copy text.', 'Please try again.');
+        });
+}
+
+// Analyze Humanized Text
+async function analyzeHumanizedText() {
+    const textOutput = document.getElementById('textOutput');
+    if (!textOutput || !textOutput.value.trim()) {
+        showError('No humanized text to analyze.', 'Please humanize text first.');
+        return;
+    }
+    
+    // Put humanized text into main input
+    textInput.value = textOutput.value;
+    updateWordCount();
+    
+    // Show success message
+    showSuccess('Humanized text loaded for analysis.', 'Click "Analyze Text" to analyze it.');
+    
+    // Scroll back to input
+    document.querySelector('.input-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Apply Humanized Text (replace original)
+function applyHumanizedText() {
+    const textOutput = document.getElementById('textOutput');
+    if (!textOutput || !textOutput.value.trim()) {
+        showError('No humanized text to apply.', 'Please humanize text first.');
+        return;
+    }
+    
+    // Replace original text with humanized version
+    textInput.value = textOutput.value;
+    updateWordCount();
+    
+    // Hide humanize section
+    showHumanizeSection(false);
+    
+    showSuccess('Humanized text applied!', 'You can now analyze this improved version.');
+}
+
+// Re-humanize Text with New Parameters
+async function rehumanizeText() {
+    if (!window.originalHumanizeText) {
+        showError('No original text found.', 'Please humanize text first.');
+        return;
+    }
+    
+    showLoading(true, 'Re-humanizing text with new settings...');
+    
+    try {
+        // Get current parameters
+        const intensity = document.getElementById('humanizeIntensity').value;
+        const style = document.getElementById('humanizeStyle').value;
+        
+        // Call humanize API
+        const humanizeResponse = await fetch(`${API_BASE_URL}/humanize`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text: window.originalHumanizeText,
+                intensity: intensity,
+                style: style
+            })
+        });
+        
+        if (!humanizeResponse.ok) {
+            throw new Error('Re-humanization failed');
+        }
+        
+        const humanizeData = await humanizeResponse.json();
+        
+        if (humanizeData.success) {
+            window.currentHumanizedData = humanizeData;
+            
+            // Update display
+            displayHumanizedResults(humanizeData);
+            
+            showSuccess(`Text re-humanized! ${humanizeData.analysis.improvement}% more human.`);
+        } else {
+            throw new Error(humanizeData.error || 'Re-humanization failed');
+        }
+        
+    } catch (error) {
+        console.error('Re-humanization error:', error);
+        showError(`Re-humanization failed: ${error.message}`);
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Highlight Differences Between Original and Humanized
+function highlightDifferences(original, humanized) {
+    // Simple diff algorithm (you could implement a more sophisticated one)
+    const originalWords = original.split(' ');
+    const humanizedWords = humanized.split(' ');
+    
+    // For now, just show stats - could implement visual diff highlighting
+    const addedWords = humanizedWords.length - originalWords.length;
+    const removedWords = originalWords.length - humanizedWords.length;
+    
+    // Update stats
+    const statsDiv = document.createElement('div');
+    statsDiv.className = 'diff-stats';
+    statsDiv.style.cssText = `
+        margin-top: 15px;
+        padding: 12px;
+        background: #f0f9ff;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: #0369a1;
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+    `;
+    
+    statsDiv.innerHTML = `
+        <span><i class="fas fa-plus-circle" style="color: #10b981;"></i> ${addedWords > 0 ? '+' : ''}${addedWords} words added</span>
+        <span><i class="fas fa-minus-circle" style="color: #ef4444;"></i> ${removedWords} words removed</span>
+        <span><i class="fas fa-exchange-alt" style="color: #f59e0b;"></i> ${Math.abs(addedWords + removedWords)} total changes</span>
+    `;
+    
+    // Remove existing diff stats
+    const existingStats = document.querySelector('.diff-stats');
+    if (existingStats) {
+        existingStats.remove();
+    }
+    
+    // Add to humanize section
+    const humanizeSection = document.getElementById('humanizeSection');
+    if (humanizeSection) {
+        humanizeSection.appendChild(statsDiv);
+    }
+}
+
+// Add event listener for humanize button
+document.addEventListener('DOMContentLoaded', function() {
+    const humanizeBtn = document.getElementById('humanizeBtn');
+    if (humanizeBtn) {
+        // Remove existing onclick and add proper event listener
+        humanizeBtn.onclick = null;
+        humanizeBtn.addEventListener('click', humanizeText);
+    }
+});
+
+// Make functions globally available
+window.humanizeText = humanizeText;
+window.copyHumanizedText = copyHumanizedText;
+window.analyzeHumanizedText = analyzeHumanizedText;
+window.applyHumanizedText = applyHumanizedText;
+window.rehumanizeText = rehumanizeText;
+window.updateHumanizedWordCount = updateHumanizedWordCount;
 
 
 

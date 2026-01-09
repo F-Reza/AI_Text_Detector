@@ -712,7 +712,7 @@ class EnhancedAIDetector:
             # Combined factor
             confidence_factor = length_factor * (0.7 + 0.3 * clarity_factor)
             
-            # Adjust probability towards extremes for clearer results
+            # Adjust probability toward extremes for clearer results
             if ai_prob > 70:
                 # Strong AI signal - push toward 100%
                 adjustment = (100 - ai_prob) * 0.4 * confidence_factor
@@ -1199,6 +1199,283 @@ class EnhancedAIDetector:
         else:
             raise ValueError(f"Unsupported file type: {ext}")
 
+    # ============================================
+    # HUMANIZE TEXT METHOD
+    # ============================================
+    
+    def humanize_ai_text(self, text, ai_prob, intensity='medium', style='balanced'):
+        """Convert AI-generated text to more human-like text"""
+        import random
+        
+        # If text is very short, return as is
+        if len(text.split()) < 10:
+            return text
+        
+        # Split into sentences
+        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+        
+        if not sentences:
+            return text
+        
+        humanized_sentences = []
+        
+        for sentence in sentences:
+            if len(sentence.split()) < 2:  # Too short to modify
+                humanized_sentences.append(sentence)
+                continue
+            
+            words = sentence.split()
+            sentence_lower = sentence.lower()
+            
+            # Remove common AI patterns
+            modified_sentence = sentence
+            
+            # List of AI patterns to remove or replace
+            ai_patterns_to_replace = [
+                ("according to", ""),
+                ("it is important to note that", ""),
+                ("in conclusion", "To sum up"),
+                ("furthermore", "Also"),
+                ("moreover", "Additionally"),
+                ("additionally", "Also"),
+                ("however", "But"),
+                ("therefore", "So"),
+                ("consequently", "As a result"),
+                ("thus", "So"),
+                ("hence", "So"),
+                ("in summary", "To summarize"),
+                ("the study found", "Research shows"),
+                ("research indicates", "Studies suggest"),
+                ("studies have shown", "Evidence suggests"),
+                ("it can be concluded", "We can conclude"),
+                ("the findings suggest", "The results indicate"),
+                ("this analysis demonstrates", "This shows"),
+                ("it should be noted", "Note that"),
+                ("it is worth noting", "It's interesting that"),
+                ("it is interesting to note", "Interestingly,"),
+                ("firstly", "First"),
+                ("secondly", "Second"),
+                ("thirdly", "Third"),
+                ("on the one hand", "On one side"),
+                ("on the other hand", "On the other side"),
+                ("in order to", "to"),
+                ("as a result", "so"),
+                ("in this context", "here"),
+                ("this highlights", "this shows"),
+                ("from this perspective", "from this view"),
+                ("it is evident that", "clearly"),
+                ("the aforementioned", "these"),
+                ("the latter", "the last one"),
+                ("the former", "the first one"),
+                ("with regard to", "about"),
+                ("in relation to", "related to"),
+                ("pertaining to", "about"),
+                ("vis-à-vis", "compared to"),
+                ("in light of", "considering"),
+                ("with respect to", "regarding"),
+                ("in terms of", "for"),
+                ("in the context of", "in"),
+                ("as per", "according to")
+            ]
+            
+            for pattern, replacement in ai_patterns_to_replace:
+                if pattern in sentence_lower:
+                    # Case-insensitive replacement
+                    modified_sentence = re.sub(pattern, replacement, modified_sentence, flags=re.IGNORECASE)
+            
+            # Add human patterns based on intensity
+            human_patterns_to_add = []
+            
+            # Conversational phrases to add
+            conversational_patterns = [
+                "I think", "I believe", "in my opinion", "personally", 
+                "actually", "basically", "you know", "I mean", 
+                "honestly", "frankly", "to be honest", "if you ask me",
+                "the thing is", "guess what", "by the way", "as a matter of fact"
+            ]
+            
+            # Personal expressions
+            personal_expressions = [
+                "In my experience", "from my perspective", "in my view", 
+                "as I see it", "to my mind", "I feel that", "I would say",
+                "I suspect", "I imagine", "I suppose", "I guess", 
+                "I reckon", "I assume", "I gather"
+            ]
+            
+            # Emotional expressions
+            emotional_expressions = [
+                "unfortunately", "fortunately", "hopefully", "sadly", 
+                "thankfully", "surprisingly", "interestingly", 
+                "funnily enough", "strangely", "ironically", 
+                "curiously", "remarkably", "notably", "strikingly"
+            ]
+            
+            if intensity == 'low':
+                if random.random() > 0.8:  # 20% chance to add pattern
+                    human_patterns_to_add.append(random.choice(conversational_patterns[:5]))
+            elif intensity == 'medium':
+                if random.random() > 0.6:  # 40% chance
+                    human_patterns_to_add.append(random.choice(conversational_patterns[:10]))
+                if random.random() > 0.8:  # 20% chance for personal
+                    human_patterns_to_add.append(random.choice(personal_expressions[:5]))
+            else:  # high
+                if random.random() > 0.4:  # 60% chance
+                    human_patterns_to_add.append(random.choice(conversational_patterns))
+                if random.random() > 0.6:  # 40% chance for personal
+                    human_patterns_to_add.append(random.choice(personal_expressions))
+                if random.random() > 0.7:  # 30% chance for emotional
+                    human_patterns_to_add.append(random.choice(emotional_expressions))
+            
+            # Add style-specific patterns
+            if style == 'conversational':
+                if random.random() > 0.5:
+                    human_patterns_to_add.append(random.choice([
+                        "you know what I mean?", "right?", "don't you think?", 
+                        "if you know what I mean", "sort of", "kind of"
+                    ]))
+            elif style == 'creative':
+                if random.random() > 0.5:
+                    human_patterns_to_add.append(random.choice([
+                        "what's fascinating is", "it's like", "picture this",
+                        "imagine if", "here's the cool part", "the amazing thing is"
+                    ]))
+            
+            # Add contractions
+            words_list = modified_sentence.split()
+            contractions_map = {
+                'do not': "don't",
+                'does not': "doesn't",
+                'did not': "didn't",
+                'cannot': "can't",
+                'could not': "couldn't",
+                'would not': "wouldn't",
+                'should not': "shouldn't",
+                'will not': "won't",
+                'is not': "isn't",
+                'are not': "aren't",
+                'was not': "wasn't",
+                'were not': "weren't",
+                'have not': "haven't",
+                'has not': "hasn't",
+                'had not': "hadn't",
+                'i am': "I'm",
+                'you are': "you're",
+                'he is': "he's",
+                'she is': "she's",
+                'it is': "it's",
+                'we are': "we're",
+                'they are': "they're",
+                'i have': "I've",
+                'you have': "you've",
+                'we have': "we've",
+                'they have': "they've",
+                'i would': "I'd",
+                'you would': "you'd",
+                'he would': "he'd",
+                'she would': "she'd",
+                'it would': "it'd",
+                'we would': "we'd",
+                'they would': "they'd",
+                'i will': "I'll",
+                'you will': "you'll",
+                'he will': "he'll",
+                'she will': "she'll",
+                'it will': "it'll",
+                'we will': "we'll",
+                'they will': "they'll",
+                'that is': "that's",
+                'what is': "what's",
+                'who is': "who's",
+                'where is': "where's",
+                'when is': "when's",
+                'why is': "why's",
+                'how is': "how's",
+                'there is': "there's",
+                'here is': "here's",
+                'let us': "let's"
+            }
+            
+            # Join and process contractions
+            modified_sentence = ' '.join(words_list)
+            for formal, contraction in contractions_map.items():
+                if formal in modified_sentence.lower():
+                    # Simple replacement - could be improved with regex
+                    modified_sentence = modified_sentence.lower().replace(formal, contraction)
+            
+            # Clean up multiple spaces
+            modified_sentence = ' '.join(modified_sentence.split())
+            
+            # Capitalize first letter
+            if modified_sentence:
+                modified_sentence = modified_sentence[0].upper() + modified_sentence[1:]
+            
+            # Add human patterns at beginning or end
+            if human_patterns_to_add:
+                pattern = random.choice(human_patterns_to_add)
+                placement = random.choice(['beginning', 'end', 'middle'])
+                
+                if placement == 'beginning':
+                    modified_sentence = pattern + ', ' + modified_sentence.lower()
+                elif placement == 'end':
+                    if not modified_sentence.endswith('.'):
+                        modified_sentence += '.'
+                    modified_sentence = modified_sentence + ' ' + pattern + '.'
+                else:  # middle
+                    # Insert at random position
+                    words = modified_sentence.split()
+                    if len(words) > 3:
+                        insert_pos = random.randint(1, len(words) - 2)
+                        words.insert(insert_pos, pattern + ',')
+                        modified_sentence = ' '.join(words)
+            
+            # Vary sentence length (shorten very long sentences)
+            if len(modified_sentence.split()) > 30 and intensity != 'low':
+                # Split on commas or conjunctions
+                parts = re.split(r'[,;]|\b(and|but|or)\b', modified_sentence)
+                if len(parts) > 1:
+                    # Take first part as complete sentence
+                    modified_sentence = parts[0].strip()
+                    if not modified_sentence.endswith('.'):
+                        modified_sentence += '.'
+            
+            # Add filler words occasionally for conversational style
+            if style == 'conversational' and random.random() > 0.7:
+                fillers = ['like', 'you know', 'I mean', 'well', 'so']
+                filler = random.choice(fillers)
+                words = modified_sentence.split()
+                if len(words) > 3:
+                    insert_pos = random.randint(1, len(words) - 2)
+                    words.insert(insert_pos, filler)
+                    modified_sentence = ' '.join(words)
+            
+            humanized_sentences.append(modified_sentence)
+        
+        # Join sentences
+        humanized_text = '. '.join(humanized_sentences) + '.'
+        
+        # Ensure proper spacing and punctuation
+        humanized_text = re.sub(r'\s+', ' ', humanized_text)
+        humanized_text = re.sub(r'\s+([.!?,;])', r'\1', humanized_text)
+        humanized_text = re.sub(r'([.!?])\s*', r'\1 ', humanized_text)
+        
+        # Fix double punctuation
+        humanized_text = re.sub(r'([.!?])\s*[.!?]+', r'\1', humanized_text)
+        
+        # Add paragraph variation if text is long
+        if len(humanized_text.split()) > 150:
+            sentences = humanized_text.split('. ')
+            if len(sentences) > 4:
+                # Create paragraphs at natural breaks
+                paragraph_break = len(sentences) // 2
+                humanized_text = '. '.join(sentences[:paragraph_break]) + '.\n\n' + \
+                               '. '.join(sentences[paragraph_break:]) + '.'
+        
+        # Ensure the text starts with capital letter
+        if humanized_text and humanized_text[0].islower():
+            humanized_text = humanized_text[0].upper() + humanized_text[1:]
+        
+        return humanized_text.strip()
+
 # Initialize detector
 detector = EnhancedAIDetector()
 analysis_history = []
@@ -1649,6 +1926,115 @@ def clear_history():
             "error": f"Failed to clear history: {str(e)[:200]}"
         }), 500
 
+# ============================================
+# HUMANIZE TEXT ENDPOINT
+# ============================================
+
+@app.route('/api/humanize', methods=['POST'])
+def humanize_text():
+    """Humanize AI-generated text by making it more natural"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'text' not in data:
+            return jsonify({"success": False, "error": "No text provided"}), 400
+        
+        text = data['text'].strip()
+        
+        if len(text) < 10:
+            return jsonify({
+                "success": False,
+                "error": "Text too short (minimum 10 characters)"
+            }), 400
+        
+        # Get humanization parameters
+        intensity = data.get('intensity', 'medium')  # low, medium, high
+        style = data.get('style', 'balanced')  # balanced, conversational, creative, formal
+        
+        # Simple text analysis for AI probability
+        text_lower = text.lower()
+        
+        # Count AI patterns
+        ai_patterns = detector.ai_patterns['generic_phrases'][:20]
+        ai_pattern_count = sum(text_lower.count(p) for p in ai_patterns)
+        
+        # Count human patterns
+        human_patterns = detector.human_patterns['conversational'][:20]
+        human_pattern_count = sum(text_lower.count(p) for p in human_patterns)
+        
+        # Calculate simple AI probability
+        total_patterns = ai_pattern_count + human_pattern_count
+        if total_patterns > 0:
+            ai_prob = (ai_pattern_count / total_patterns) * 100
+        else:
+            # Default based on text characteristics
+            if len(text.split()) > 20 and '.' in text:
+                # Longer, structured text tends to be more AI-like
+                ai_prob = 60
+            else:
+                ai_prob = 40
+        
+        # Adjust based on text length
+        word_count = len(text.split())
+        if word_count < 30:
+            ai_prob = max(0, ai_prob - 10)  # Short texts are often more human
+        elif word_count > 100:
+            ai_prob = min(100, ai_prob + 10)  # Long structured texts often AI
+        
+        # Humanize the text
+        humanized_text = detector.humanize_ai_text(text, ai_prob, intensity, style)
+        
+        # Calculate improvement
+        humanized_lower = humanized_text.lower()
+        humanized_ai_pattern_count = sum(humanized_lower.count(p) for p in ai_patterns)
+        humanized_human_pattern_count = sum(humanized_lower.count(p) for p in human_patterns)
+        
+        total_humanized = humanized_ai_pattern_count + humanized_human_pattern_count
+        if total_humanized > 0:
+            humanized_ai_prob = (humanized_ai_pattern_count / total_humanized) * 100
+        else:
+            humanized_ai_prob = 30  # Default if no patterns found
+        
+        improvement = max(0, ai_prob - humanized_ai_prob)
+        
+        # Calculate words changed
+        original_words = set(text.lower().split())
+        humanized_words = set(humanized_text.lower().split())
+        words_changed = len(original_words.symmetric_difference(humanized_words))
+        
+        return jsonify({
+            "success": True,
+            "original_text": text,
+            "humanized_text": humanized_text,
+            "analysis": {
+                "original_ai_probability": round(ai_prob, 1),
+                "original_human_probability": round(100 - ai_prob, 1),
+                "original_is_ai": ai_prob > 60,
+                "humanized_ai_probability": round(humanized_ai_prob, 1),
+                "humanized_human_probability": round(100 - humanized_ai_prob, 1),
+                "humanized_is_ai": humanized_ai_prob > 60,
+                "improvement": round(improvement, 1),
+                "words_changed": words_changed
+            },
+            "parameters": {
+                "intensity": intensity,
+                "style": style,
+                "character_reduction": len(text) - len(humanized_text),
+                "word_count": word_count,
+                "humanized_word_count": len(humanized_text.split())
+            }
+        })
+    
+    except Exception as e:
+        print(f"Humanization error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return jsonify({
+            "success": False,
+            "error": f"Humanization failed: {str(e)[:100]}"
+        }), 500
+
 if __name__ == '__main__':
     print("=" * 70)
     print("AI DETECTOR PRO - Enhanced ML Edition")
@@ -1666,6 +2052,7 @@ if __name__ == '__main__':
     print("  POST /api/upload       - Upload file for analysis")
     print("  POST /api/detect       - Analyze text directly")
     print("  POST /api/features     - Get detailed feature analysis")
+    print("  POST /api/humanize     - Humanize AI-generated text")
     print("  GET  /api/health       - Health check & status")
     print("  GET  /api/history      - Analysis history")
     print("  GET  /api/benchmark    - Run benchmark tests")

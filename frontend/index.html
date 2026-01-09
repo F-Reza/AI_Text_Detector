@@ -80,7 +80,12 @@
                         <button class="btn-action" onclick="loadSample()">
                             <i class="fas fa-vial"></i> Sample
                         </button>
-                        <button class="btn-primary" onclick="analyzeText()" id="analyzeBtn">
+
+                        <button class="btn-primary humanize" onclick="humanizeText()" id="humanizeBtn">
+                            <i class="fas fa-magic"></i> Humanize Text
+                        </button>
+
+                        <button class="btn-primary analyzeX" onclick="analyzeText()" id="analyzeBtn">
                             <i class="fas fa-search"></i> Analyze Text
                         </button>
                     </div>
@@ -245,6 +250,101 @@
                     </div>
                 </div>
             </section>
+
+
+            <!-- Humanize Section -->
+            <section class="humanize-section" id="humanizeSection" style="display: none;">
+                <div class="humanize-header">
+                    <h3><i class="fas fa-magic"></i> Humanized Output</h3>
+                    <div class="humanize-stats">
+                        <div class="humanize-stat">
+                            <i class="fas fa-chart-line"></i>
+                            <span id="improvementValue">0%</span>
+                            <span>More Human</span>
+                        </div>
+                        <div class="humanize-stat">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span id="wordsChanged">0</span>
+                            <span>Words Changed</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="humanize-controls">
+                    <div class="control-group">
+                        <label for="humanizeIntensity"><i class="fas fa-sliders-h"></i> Intensity</label>
+                        <select id="humanizeIntensity">
+                            <option value="low">Low - Minimal Changes</option>
+                            <option value="medium" selected>Medium - Balanced</option>
+                            <option value="high">High - Maximum Humanization</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="humanizeStyle"><i class="fas fa-paint-brush"></i> Style</label>
+                        <select id="humanizeStyle">
+                            <option value="balanced" selected>Balanced</option>
+                            <option value="conversational">Conversational</option>
+                            <option value="creative">Creative</option>
+                            <option value="formal">Formal</option>
+                        </select>
+                    </div>
+                    
+                    <!-- <button class="btn-primary humanize" onclick="rehumanizeText()">
+                        <i class="fas fa-sync-alt"></i> Regenerate
+                    </button> -->
+                </div>
+
+                <div class="text-comparison">
+                    <div class="comparison-column">
+                        <h4><i class="fas fa-robot"></i> Original (AI-like)</h4>
+                        <div class="text-box" id="originalTextOutput">
+                            <!-- Original text will appear here -->
+                        </div>
+                        <div class="text-stats">
+                            <span><i class="fas fa-percentage"></i> <span id="originalAIProb">0%</span> AI</span>
+                            <span><i class="fas fa-font"></i> <span id="originalWordCount">0</span> words</span>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-column">
+                        <h4><i class="fas fa-user"></i> Humanized</h4>
+                        <textarea 
+                            id="textOutput" 
+                            placeholder="Humanized text will appear here..."
+                            rows="8"
+                            oninput="updateHumanizedWordCount()"
+                            style="min-height: 280px;"
+                        ></textarea>
+                        <div class="text-stats">
+                            <span><i class="fas fa-percentage"></i> <span id="humanizedAIProb">0%</span> AI</span>
+                            <span><i class="fas fa-font"></i> <span id="humanizedWordCount">0</span> words</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="humanize-actions">
+                    <button class="btn-action" onclick="copyHumanizedText()">
+                        <i class="fas fa-copy"></i> Copy Humanized Text
+                    </button>
+                    <button class="btn-action" onclick="analyzeHumanizedText()">
+                        <i class="fas fa-search"></i> Analyze Humanized Text
+                    </button>
+
+                    <button class="btn-action" onclick="clearHumanizedText()">
+                        <i class="fas fa-trash-alt"></i> Clear Humanized Text
+                    </button>
+
+                    <button class="humanizeX" onclick="rehumanizeText()">
+                        <i class="fas fa-sync-alt"></i> Regenerate
+                    </button>
+
+                    <button class="btn-primary" onclick="applyHumanizedText()">
+                        <i class="fas fa-check-circle"></i> Use This Version
+                    </button>
+                </div>
+            </section>
+
 
             <!-- Features Section -->
             <section class="features-section" id="features">
